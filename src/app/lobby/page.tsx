@@ -67,7 +67,7 @@ interface ActivityItem {
 }
 
 export default function LobbyPage() {
-  const { userProfile, updateBalance, user } = useAuth();
+  const { userProfile, updateBalance, user, loading } = useAuth();
   const router = useRouter();
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [jackpot, setJackpot] = useState(10243100);
@@ -76,8 +76,8 @@ export default function LobbyPage() {
   const [dailyClaimed, setDailyClaimed] = useState(false);
 
   useEffect(() => {
-    if (!user) { router.push('/auth/login'); return; }
-  }, [user, router]);
+    if (!loading && !user) router.push('/auth/login');
+  }, [user, loading, router]);
 
   useEffect(() => {
     const lastBonus = localStorage.getItem('gupta_last_bonus');
@@ -120,6 +120,14 @@ export default function LobbyPage() {
     ? Math.min(100, ((userProfile.vipXP - vipInfo.minXP) / (vipInfo.maxXP - vipInfo.minXP)) * 100)
     : 0;
 
+  if (loading) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(155deg,#0D0520 0%,#110836 22%,#0A1A0F 48%,#1A0830 75%,#0D0520 100%)' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 24, fontWeight: 900, background: 'linear-gradient(135deg,#FFD700,#FFF176,#B8960C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: 16 }}>GUPTA GAMES</div>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', border: '3px solid rgba(255,215,0,.2)', borderTopColor: '#FFD700', animation: 'spin .7s linear infinite', margin: '0 auto' }} />
+      </div>
+    </div>
+  );
   if (!user) return null;
 
   return (
