@@ -131,15 +131,8 @@ export default function LobbyPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(155deg,#0D0520 0%,#110836 22%,#0A1A0F 48%,#1A0830 75%,#0D0520 100%)' }}>
-      {/* Ambient orbs */}
-      <div style={{ position: 'fixed', top: '5%', right: '5%', width: 500, height: 500, background: 'radial-gradient(ellipse,rgba(147,51,234,.18) 0%,transparent 65%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
-      <div style={{ position: 'fixed', bottom: '10%', left: '0%', width: 400, height: 400, background: 'radial-gradient(ellipse,rgba(0,200,117,.12) 0%,transparent 65%)', filter: 'blur(60px)', pointerEvents: 'none', zIndex: 0 }} />
-
+    <div className="page-layout">
       <Navbar />
-
-      {/* Main layout: sidebar offset on md+ */}
-      <div style={{ paddingTop: 64, paddingBottom: 72, position: 'relative', zIndex: 1 }} className="md:pl-56 md:pb-0">
         <main style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px 24px' }}>
 
           {/* Balance hero card */}
@@ -372,7 +365,6 @@ export default function LobbyPage() {
           </motion.div>
 
         </main>
-      </div>
 
       <MobileBottomNav />
     </div>

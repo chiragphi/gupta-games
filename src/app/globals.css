@@ -259,3 +259,50 @@ body {
 }
 .achievement-badge.locked { filter: grayscale(1); opacity: 0.4; }
 .achievement-badge.unlocked { box-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+
+/* ── Responsive layout helpers ─────────────────────────────────────────────
+   Use these instead of Tailwind responsive classes to avoid inline-style
+   specificity conflicts. !important overrides inline style display values.
+──────────────────────────────────────────────────────────────────────────── */
+
+/* Full-page wrapper: accounts for fixed navbar (top) + mobile bottom nav */
+.page-layout {
+  min-height: 100vh;
+  padding-top: 64px;
+  padding-bottom: 72px;
+  background: linear-gradient(155deg,#0D0520 0%,#110836 22%,#0A1A0F 48%,#1A0830 75%,#0D0520 100%);
+}
+
+/* On desktop: push content right past fixed sidebar, kill bottom padding */
+@media (min-width: 768px) {
+  .page-layout {
+    padding-left: 224px;
+    padding-bottom: 0;
+  }
+}
+
+/* Desktop sidebar: hidden by default, flex on md+ */
+.sidebar-desktop {
+  display: none;
+}
+@media (min-width: 768px) {
+  .sidebar-desktop {
+    display: flex !important;
+  }
+}
+
+/* Mobile bottom nav: flex by default, hidden on md+ */
+.mobile-bottom-nav {
+  display: flex;
+}
+@media (min-width: 768px) {
+  .mobile-bottom-nav {
+    display: none !important;
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.pulse-dot { animation: pulse-dot 1.5s ease-in-out infinite; }

@@ -43,7 +43,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className="hidden md:flex"
+      className="sidebar-desktop"
       style={{
         position: 'fixed',
         left: 0,
@@ -154,14 +154,13 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="md:hidden"
+      className="mobile-bottom-nav"
       style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
         height: 64,
-        display: 'flex',
         alignItems: 'stretch',
         background: 'rgba(8,4,20,0.97)',
         backdropFilter: 'blur(24px)',
