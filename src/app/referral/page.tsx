@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Navbar from '@/components/layout/navbar';
-import Sidebar from '@/components/layout/sidebar';
+import Sidebar, { MobileBottomNav } from '@/components/layout/sidebar';
 import { toast } from 'sonner';
 import { Copy, Share2, Users, Gift, TrendingUp } from 'lucide-react';
 
@@ -49,11 +49,10 @@ export default function ReferralPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--void)' }}>
+    <div className="page-layout">
       <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 max-w-3xl">
+      <Sidebar />
+      <main style={{ maxWidth: 800, margin: '0 auto', padding: '24px 20px' }}>
           <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
             className="text-2xl font-bold mb-6" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>
             👥 Referral Program
@@ -169,7 +168,7 @@ export default function ReferralPage() {
             </motion.button>
           </motion.div>
         </main>
-      </div>
+      <MobileBottomNav />
     </div>
   );
 }
