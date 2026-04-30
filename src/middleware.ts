@@ -1,19 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED = ['/lobby', '/games', '/wallet', '/profile', '/leaderboard', '/referral', '/onboarding'];
-
+// Auth guarding is handled client-side via useEffect in each protected page.
+// Firebase client SDK does not set server-readable cookies, so server-side
+// middleware cannot verify auth state.
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED.some((p) => pathname.startsWith(p));
-  if (!isProtected) return NextResponse.next();
-
-  const token = request.cookies.get('__session')?.value || request.cookies.get('firebase-auth-token')?.value;
-  if (!token && isProtected) {
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
   return NextResponse.next();
 }
 
