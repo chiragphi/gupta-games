@@ -1,20 +1,25 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import { VIP_LEVELS } from '@/data/fake-data';
 import { toast } from 'sonner';
-import { Bell, Menu, X } from 'lucide-react';
+import { Bell } from 'lucide-react';
+
+const NOTIFICATIONS = [
+  { id: 1, text: 'Daily bonus available! Claim 500 coins', time: '2 min ago', icon: '🎁' },
+  { id: 2, text: 'New game: Royal Blackjack Pro', time: '1 hour ago', icon: '🃏' },
+  { id: 3, text: 'Referral code used! +1000 coins', time: '3 hours ago', icon: '👥' },
+];
 
 export default function Navbar() {
   const { userProfile, signOut } = useAuth();
   const router = useRouter();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [prevBalance, setPrevBalance] = useState<number | null>(null);
   const [balancePulse, setBalancePulse] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -35,6 +40,7 @@ export default function Navbar() {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
+        setNotifOpen(false);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -47,103 +53,91 @@ export default function Navbar() {
     router.push('/');
   };
 
-  const FAKE_NOTIFICATIONS = [
-    { id: 1, text: 'Daily bonus available! Claim 500 coins', time: '2 min ago', icon: '🎁' },
-    { id: 2, text: 'New game added: Royal Blackjack Pro', time: '1 hour ago', icon: '🃏' },
-    { id: 3, text: 'Your referral code was used! +1000 coins', time: '3 hours ago', icon: '👥' },
-  ];
-
-  const NAV_LINKS = [
-    { href: '/lobby', label: 'Lobby' },
-    { href: '/games/slots', label: 'Slots' },
-    { href: '/games/crash', label: 'Crash' },
-    { href: '/games/blackjack', label: 'Blackjack' },
-    { href: '/games/mines', label: 'Mines' },
-  ];
-
   return (
-    <nav
-      className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 h-16"
-      style={{
-        background: 'rgba(6,6,15,0.9)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--border-gold)',
-      }}
-    >
+    <nav style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 64,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 16px',
+      background: 'rgba(8,4,20,0.95)',
+      backdropFilter: 'blur(24px)',
+      borderBottom: '1px solid rgba(255,215,0,.15)',
+      zIndex: 50,
+      gap: 8,
+    }}>
       {/* Logo */}
-      <Link href="/lobby" className="font-display text-lg font-black shrink-0" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>
-        Gupta Games
+      <Link href="/lobby">
+        <div style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 16, fontWeight: 900, background: 'linear-gradient(135deg,#FFD700,#FFF176,#B8960C)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'nowrap', cursor: 'pointer' }}>
+          GUPTA GAMES
+        </div>
       </Link>
 
-      {/* Desktop nav links */}
-      <div className="hidden md:flex items-center gap-1">
-        {NAV_LINKS.map(link => (
-          <Link key={link.href} href={link.href}>
-            <button
-              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all hover:bg-white/5"
-              style={{ color: 'var(--text-secondary)' }}
-            >
-              {link.label}
-            </button>
-          </Link>
-        ))}
-      </div>
-
-      {/* Right side */}
-      <div className="flex items-center gap-3">
+      {/* Right controls */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {/* Balance */}
         <motion.div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg"
-          style={{ background: 'rgba(255,215,0,0.08)', border: '1px solid var(--border-gold)' }}
           animate={balancePulse ? { scale: [1, 1.1, 1] } : {}}
           transition={{ duration: 0.4 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '6px 12px',
+            borderRadius: 10,
+            background: 'rgba(255,215,0,.08)',
+            border: '1px solid rgba(255,215,0,.2)',
+          }}
         >
-          <span>🪙</span>
-          <span
-            className="font-number font-bold text-sm"
-            style={{ fontFamily: 'Orbitron, sans-serif', color: 'var(--gold)' }}
-          >
+          <span style={{ fontSize: 14 }}>🪙</span>
+          <span style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 13, fontWeight: 700, color: '#FFD700' }}>
             {balance.toLocaleString()}
           </span>
         </motion.div>
 
-        {/* VIP badge */}
-        <div
-          className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold"
-          style={{ background: 'rgba(255,255,255,0.05)', color: vipInfo.color }}
-        >
-          {vipInfo.badge} {vipInfo.label}
-        </div>
-
-        {/* Notification bell */}
-        <div className="relative">
+        {/* Notif bell */}
+        <div style={{ position: 'relative' }}>
           <button
-            onClick={() => setNotifOpen(!notifOpen)}
-            className="relative p-2 rounded-lg hover:bg-white/5 transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
+            onClick={() => { setNotifOpen(o => !o); setDropdownOpen(false); }}
+            style={{ position: 'relative', padding: 8, borderRadius: 10, background: 'rgba(255,255,255,.05)', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <Bell size={18} />
-            <div className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: 'var(--magenta)' }} />
+            <div style={{ position: 'absolute', top: 6, right: 6, width: 7, height: 7, borderRadius: '50%', background: '#E91E8C' }} />
           </button>
 
           <AnimatePresence>
             {notifOpen && (
               <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                initial={{ opacity: 0, y: -8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="absolute right-0 top-10 w-72 glass-card overflow-hidden"
-                style={{ border: '1px solid var(--border-gold)', zIndex: 100 }}
+                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 44,
+                  width: 280,
+                  background: 'rgba(12,6,30,0.98)',
+                  backdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(255,215,0,.2)',
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  zIndex: 100,
+                  boxShadow: '0 20px 60px rgba(0,0,0,.6)',
+                }}
               >
-                <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-gold)' }}>
-                  <span className="font-semibold text-sm" style={{ color: 'var(--gold)' }}>Notifications</span>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,215,0,.1)' }}>
+                  <span style={{ fontFamily: 'Syne,sans-serif', fontSize: 13, fontWeight: 700, color: '#FFD700' }}>Notifications</span>
                 </div>
-                {FAKE_NOTIFICATIONS.map(n => (
-                  <div key={n.id} className="px-4 py-3 flex gap-3 hover:bg-white/5 cursor-pointer" style={{ borderBottom: '1px solid rgba(255,215,0,0.05)' }}>
-                    <span className="text-xl shrink-0">{n.icon}</span>
+                {NOTIFICATIONS.map(n => (
+                  <div key={n.id} style={{ padding: '10px 16px', display: 'flex', gap: 10, borderBottom: '1px solid rgba(255,255,255,.04)', cursor: 'pointer' }}>
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>{n.icon}</span>
                     <div>
-                      <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{n.text}</p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{n.time}</p>
+                      <p style={{ fontFamily: 'Syne,sans-serif', fontSize: 12, color: 'rgba(255,255,255,.8)', margin: 0 }}>{n.text}</p>
+                      <p style={{ fontFamily: 'Syne,sans-serif', fontSize: 11, color: 'rgba(255,255,255,.35)', margin: '3px 0 0' }}>{n.time}</p>
                     </div>
                   </div>
                 ))}
@@ -152,11 +146,11 @@ export default function Navbar() {
           </AnimatePresence>
         </div>
 
-        {/* Avatar dropdown */}
-        <div className="relative" ref={dropdownRef}>
+        {/* Avatar + dropdown */}
+        <div ref={dropdownRef} style={{ position: 'relative' }}>
           <button
-            onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="text-2xl p-1 rounded-lg hover:bg-white/5 transition-colors"
+            onClick={() => { setDropdownOpen(o => !o); setNotifOpen(false); }}
+            style={{ fontSize: 24, padding: '4px', borderRadius: 10, background: 'rgba(255,255,255,.05)', border: 'none', cursor: 'pointer', lineHeight: 1 }}
           >
             {userProfile?.avatar ?? '👤'}
           </button>
@@ -164,15 +158,26 @@ export default function Navbar() {
           <AnimatePresence>
             {dropdownOpen && (
               <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                initial={{ opacity: 0, y: -8, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                className="absolute right-0 top-10 w-52 glass-card overflow-hidden"
-                style={{ border: '1px solid var(--border-gold)', zIndex: 100 }}
+                exit={{ opacity: 0, y: -8, scale: 0.95 }}
+                style={{
+                  position: 'absolute',
+                  right: 0,
+                  top: 44,
+                  width: 200,
+                  background: 'rgba(12,6,30,0.98)',
+                  backdropFilter: 'blur(24px)',
+                  border: '1px solid rgba(255,215,0,.2)',
+                  borderRadius: 16,
+                  overflow: 'hidden',
+                  zIndex: 100,
+                  boxShadow: '0 20px 60px rgba(0,0,0,.6)',
+                }}
               >
-                <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-gold)' }}>
-                  <p className="font-bold text-sm" style={{ color: 'var(--gold)' }}>{userProfile?.username}</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{vipInfo.badge} {vipInfo.label}</p>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,215,0,.1)' }}>
+                  <p style={{ fontFamily: 'Syne,sans-serif', fontSize: 13, fontWeight: 700, color: '#FFD700', margin: 0 }}>{userProfile?.username}</p>
+                  <p style={{ fontFamily: 'Syne,sans-serif', fontSize: 11, color: vipInfo.color, margin: '2px 0 0' }}>{vipInfo.badge} {vipInfo.label}</p>
                 </div>
                 {[
                   { href: '/profile', label: '👤 Profile' },
@@ -182,9 +187,8 @@ export default function Navbar() {
                 ].map(item => (
                   <Link key={item.href} href={item.href}>
                     <button
-                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors"
-                      style={{ color: 'var(--text-secondary)' }}
                       onClick={() => setDropdownOpen(false)}
+                      style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontFamily: 'Syne,sans-serif', fontSize: 13, color: 'rgba(255,255,255,.65)', background: 'none', border: 'none', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,.04)' }}
                     >
                       {item.label}
                     </button>
@@ -192,8 +196,7 @@ export default function Navbar() {
                 ))}
                 <button
                   onClick={handleSignOut}
-                  className="w-full text-left px-4 py-2.5 text-sm hover:bg-white/5 transition-colors border-t"
-                  style={{ color: '#ef4444', borderColor: 'var(--border-gold)' }}
+                  style={{ width: '100%', textAlign: 'left', padding: '10px 16px', fontFamily: 'Syne,sans-serif', fontSize: 13, color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer' }}
                 >
                   🚪 Sign Out
                 </button>
@@ -201,41 +204,7 @@ export default function Navbar() {
             )}
           </AnimatePresence>
         </div>
-
-        {/* Mobile hamburger */}
-        <button
-          className="md:hidden p-2 rounded-lg hover:bg-white/5"
-          style={{ color: 'var(--text-secondary)' }}
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X size={18} /> : <Menu size={18} />}
-        </button>
       </div>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="absolute top-16 left-0 right-0 glass-card border-t"
-            style={{ borderColor: 'var(--border-gold)', zIndex: 100 }}
-          >
-            {NAV_LINKS.map(link => (
-              <Link key={link.href} href={link.href}>
-                <button
-                  className="w-full text-left px-6 py-3 text-sm hover:bg-white/5"
-                  style={{ color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,215,0,0.05)' }}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  {link.label}
-                </button>
-              </Link>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </nav>
   );
 }

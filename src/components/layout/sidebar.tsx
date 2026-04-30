@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
@@ -29,9 +29,8 @@ export default function Sidebar() {
   const vipXP = userProfile?.vipXP ?? 0;
   const vipInfo = VIP_LEVELS[vipLevel];
   const nextVipInfo = VIP_LEVELS[Math.min(vipLevel + 1, 5)];
-
   const xpProgress = vipLevel < 5
-    ? ((vipXP - vipInfo.minXP) / (vipInfo.maxXP - vipInfo.minXP)) * 100
+    ? Math.min(100, ((vipXP - vipInfo.minXP) / (vipInfo.maxXP - vipInfo.minXP)) * 100)
     : 100;
 
   const handleDailyBonus = async () => {
@@ -39,36 +38,49 @@ export default function Sidebar() {
     const bonus = 500 + vipLevel * 200;
     await updateBalance(bonus);
     setClaimedDaily(true);
-    toast.success(`Daily bonus claimed! +${bonus.toLocaleString()} Gupta Coins!`);
+    toast.success(`🎁 +${bonus.toLocaleString()} Gupta Coins!`);
   };
 
   return (
     <aside
-      className="hidden md:flex flex-col w-56 shrink-0 fixed left-0 top-16 bottom-0 overflow-y-auto"
+      className="hidden md:flex"
       style={{
-        background: 'rgba(6,6,15,0.85)',
-        backdropFilter: 'blur(20px)',
-        borderRight: '1px solid var(--border-gold)',
+        position: 'fixed',
+        left: 0,
+        top: 64,
+        bottom: 0,
+        width: 224,
+        flexDirection: 'column',
+        background: 'rgba(10,5,25,0.92)',
+        backdropFilter: 'blur(24px)',
+        borderRight: '1px solid rgba(255,215,0,.12)',
         zIndex: 40,
+        overflowY: 'auto',
       }}
     >
-      <div className="flex-1 py-4 flex flex-col gap-1 px-3">
-        {NAV_ITEMS.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + '/');
+      <div style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {NAV_ITEMS.map(item => {
+          const active = pathname === item.href || (item.href !== '/lobby' && pathname.startsWith(item.href));
           return (
             <Link key={item.href} href={item.href}>
               <motion.div
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all"
-                style={{
-                  background: active ? 'rgba(255,215,0,0.12)' : 'transparent',
-                  border: active ? '1px solid rgba(255,215,0,0.3)' : '1px solid transparent',
-                  color: active ? 'var(--gold)' : 'var(--text-secondary)',
-                }}
                 whileHover={{ x: 3 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 12px',
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  background: active ? 'rgba(255,215,0,.1)' : 'transparent',
+                  border: active ? '1px solid rgba(255,215,0,.25)' : '1px solid transparent',
+                  color: active ? '#FFD700' : 'rgba(255,255,255,.55)',
+                  transition: 'background .2s,color .2s',
+                }}
               >
-                <span className="text-lg">{item.icon}</span>
-                <span className="text-sm font-medium">{item.label}</span>
-                {active && <div className="ml-auto w-1.5 h-1.5 rounded-full" style={{ background: 'var(--gold)' }} />}
+                <span style={{ fontSize: 18 }}>{item.icon}</span>
+                <span style={{ fontFamily: 'Syne,sans-serif', fontSize: 13, fontWeight: active ? 700 : 500 }}>{item.label}</span>
+                {active && <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: '#FFD700' }} />}
               </motion.div>
             </Link>
           );
@@ -76,43 +88,51 @@ export default function Sidebar() {
       </div>
 
       {/* VIP progress */}
-      <div className="px-4 py-4 border-t" style={{ borderColor: 'var(--border-gold)' }}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold" style={{ color: vipInfo.color }}>
+      <div style={{ padding: '12px 14px', borderTop: '1px solid rgba(255,215,0,.1)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+          <span style={{ fontFamily: 'Syne,sans-serif', fontSize: 11, fontWeight: 700, color: vipInfo.color }}>
             {vipInfo.badge} {vipInfo.label}
           </span>
           {vipLevel < 5 && (
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>→ {nextVipInfo.label}</span>
+            <span style={{ fontFamily: 'Syne,sans-serif', fontSize: 11, color: 'rgba(255,255,255,.3)' }}>→ {nextVipInfo.label}</span>
           )}
         </div>
-        <div className="h-2 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.1)' }}>
+        <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,.1)', overflow: 'hidden' }}>
           <motion.div
-            className="h-full rounded-full"
-            style={{ background: `linear-gradient(90deg, ${vipInfo.color}, var(--gold))`, width: `${Math.min(xpProgress, 100)}%` }}
+            style={{ height: '100%', borderRadius: 99, background: `linear-gradient(90deg,${vipInfo.color},#FFD700)` }}
             initial={{ width: 0 }}
-            animate={{ width: `${Math.min(xpProgress, 100)}%` }}
+            animate={{ width: `${xpProgress}%` }}
             transition={{ duration: 1, ease: 'easeOut' }}
           />
         </div>
-        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+        <p style={{ fontFamily: 'Syne,sans-serif', fontSize: 10, color: 'rgba(255,255,255,.3)', marginTop: 4 }}>
           {vipXP.toFixed(0)} / {vipLevel < 5 ? vipInfo.maxXP : '∞'} XP
         </p>
       </div>
 
       {/* Daily bonus */}
-      <div className="px-3 pb-4">
+      <div style={{ padding: '10px 10px 14px' }}>
         <motion.button
           onClick={handleDailyBonus}
           disabled={claimedDaily}
-          className="w-full py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2"
-          style={{
-            background: claimedDaily ? 'rgba(255,255,255,0.05)' : 'rgba(255,215,0,0.12)',
-            border: claimedDaily ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,215,0,0.4)',
-            color: claimedDaily ? 'var(--text-muted)' : 'var(--gold)',
-            boxShadow: claimedDaily ? 'none' : '0 0 15px rgba(255,215,0,0.2)',
-          }}
-          animate={!claimedDaily ? { boxShadow: ['0 0 10px rgba(255,215,0,0.2)', '0 0 25px rgba(255,215,0,0.4)', '0 0 10px rgba(255,215,0,0.2)'] } : {}}
+          animate={!claimedDaily ? { boxShadow: ['0 0 10px rgba(255,215,0,.15)', '0 0 22px rgba(255,215,0,.35)', '0 0 10px rgba(255,215,0,.15)'] } : {}}
           transition={{ duration: 2, repeat: Infinity }}
+          style={{
+            width: '100%',
+            padding: '10px',
+            borderRadius: 12,
+            fontFamily: 'Syne,sans-serif',
+            fontSize: 13,
+            fontWeight: 700,
+            border: claimedDaily ? '1px solid rgba(255,255,255,.08)' : '1px solid rgba(255,215,0,.35)',
+            background: claimedDaily ? 'rgba(255,255,255,.04)' : 'rgba(255,215,0,.1)',
+            color: claimedDaily ? 'rgba(255,255,255,.3)' : '#FFD700',
+            cursor: claimedDaily ? 'default' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+          }}
         >
           🎁 {claimedDaily ? 'Bonus Claimed' : 'Daily Bonus'}
         </motion.button>
@@ -121,37 +141,70 @@ export default function Sidebar() {
   );
 }
 
-// Mobile bottom nav
+const MOBILE_ITEMS = [
+  { href: '/lobby', label: 'Home', icon: '🏛️' },
+  { href: '/games/slots', label: 'Slots', icon: '🎰' },
+  { href: '/games/crash', label: 'Crash', icon: '🚀' },
+  { href: '/wallet', label: 'Wallet', icon: '💰' },
+  { href: '/profile', label: 'Me', icon: '👤' },
+];
+
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const MOBILE_ITEMS = [
-    { href: '/lobby', label: 'Home', icon: '🏛️' },
-    { href: '/games/slots', label: 'Slots', icon: '🎰' },
-    { href: '/games/crash', label: 'Crash', icon: '🚀' },
-    { href: '/wallet', label: 'Wallet', icon: '💰' },
-    { href: '/profile', label: 'Profile', icon: '👤' },
-  ];
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 flex items-center z-40"
+      className="md:hidden"
       style={{
-        background: 'rgba(6,6,15,0.95)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid var(--border-gold)',
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
         height: 64,
+        display: 'flex',
+        alignItems: 'stretch',
+        background: 'rgba(8,4,20,0.97)',
+        backdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(255,215,0,.15)',
+        zIndex: 50,
       }}
     >
       {MOBILE_ITEMS.map(item => {
-        const active = pathname === item.href || pathname.startsWith(item.href + '/');
+        const active = pathname === item.href || (item.href !== '/lobby' && pathname.startsWith(item.href));
         return (
-          <Link key={item.href} href={item.href} className="flex-1">
-            <div className="flex flex-col items-center gap-0.5 py-2">
-              <span className="text-xl">{item.icon}</span>
-              <span className="text-xs font-medium" style={{ color: active ? 'var(--gold)' : 'var(--text-muted)' }}>
+          <Link key={item.href} href={item.href} style={{ flex: 1 }}>
+            <div style={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 2,
+              position: 'relative',
+            }}>
+              {active && (
+                <motion.div
+                  layoutId="tab-indicator"
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '15%',
+                    right: '15%',
+                    height: 2,
+                    borderRadius: 99,
+                    background: '#FFD700',
+                  }}
+                />
+              )}
+              <span style={{ fontSize: 22 }}>{item.icon}</span>
+              <span style={{
+                fontFamily: 'Syne,sans-serif',
+                fontSize: 10,
+                fontWeight: active ? 700 : 500,
+                color: active ? '#FFD700' : 'rgba(255,255,255,.4)',
+              }}>
                 {item.label}
               </span>
-              {active && <div className="absolute bottom-0 w-8 h-0.5 rounded-full" style={{ background: 'var(--gold)' }} />}
             </div>
           </Link>
         );
