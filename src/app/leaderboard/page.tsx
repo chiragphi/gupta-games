@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Navbar from '@/components/layout/navbar';
@@ -13,6 +13,12 @@ type Tab = 'alltime' | 'week' | 'today';
 function scramble<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() * 0.4 - 0.2);
 }
+
+const PODIUM_CONFIG = [
+  { rank: 2, color: '#C0C0C0', glow: 'rgba(192,192,192,0.3)', medal: '🥈', height: 110, order: 0 },
+  { rank: 1, color: '#FFD700', glow: 'rgba(255,215,0,0.5)', medal: '🥇', height: 150, order: 1 },
+  { rank: 3, color: '#CD7F32', glow: 'rgba(205,127,50,0.3)', medal: '🥉', height: 90, order: 2 },
+];
 
 export default function LeaderboardPage() {
   const { user, userProfile } = useAuth();
@@ -35,7 +41,6 @@ export default function LeaderboardPage() {
 
   const top3 = board.slice(0, 3);
   const rest = board.slice(3);
-  const podiumOrder = [top3[1], top3[0], top3[2]]; // 2nd, 1st, 3rd
 
   if (!user) return null;
 
@@ -43,108 +48,133 @@ export default function LeaderboardPage() {
     <div className="page-layout">
       <Navbar />
       <Sidebar />
-      <main style={{ maxWidth: 900, margin: '0 auto', padding: '24px 20px' }}>
-          <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-bold mb-6" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>
-            🏆 Leaderboard
-          </motion.h1>
+      <main style={{ maxWidth: 860, margin: '0 auto', padding: '24px 16px' }}>
 
+        {/* Header */}
+        <motion.div initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+          <h1 style={{ fontFamily: 'Cinzel Decorative,serif', fontSize: 22, fontWeight: 900, color: '#FFD700', margin: 0 }}>
+            🏆 Leaderboard
+          </h1>
           {/* Tabs */}
-          <div className="flex gap-2 mb-6">
-            {(['alltime', 'week', 'today'] as Tab[]).map((t) => (
+          <div style={{ display: 'flex', gap: 6 }}>
+            {(['alltime', 'week', 'today'] as Tab[]).map(t => (
               <motion.button key={t} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
                 onClick={() => setTab(t)}
-                className="px-5 py-2 rounded-lg text-sm font-bold capitalize transition-all"
                 style={{
-                  background: tab === t ? 'rgba(255,215,0,0.15)' : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${tab === t ? 'var(--gold)' : 'rgba(255,255,255,0.08)'}`,
-                  color: tab === t ? 'var(--gold)' : 'var(--text-muted)',
+                  padding: '7px 16px', borderRadius: 10, fontFamily: 'Syne,sans-serif', fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none',
+                  background: tab === t ? 'rgba(255,215,0,.18)' : 'rgba(255,255,255,.05)',
+                  color: tab === t ? '#FFD700' : 'rgba(255,255,255,.45)',
+                  outline: tab === t ? '1px solid rgba(255,215,0,.4)' : '1px solid rgba(255,255,255,.08)',
                 }}>
                 {t === 'alltime' ? 'All Time' : t === 'week' ? 'This Week' : 'Today'}
               </motion.button>
             ))}
           </div>
+        </motion.div>
 
-          {/* Podium */}
-          <div className="flex items-end justify-center gap-4 mb-10">
-            {podiumOrder.map((entry, pi) => {
+        {/* Podium — card-based, not bars */}
+        <AnimatePresence mode="wait">
+          <motion.div key={tab}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 12, marginBottom: 32 }}>
+            {PODIUM_CONFIG.map(cfg => {
+              const entry = top3.find(e => e.rank === cfg.rank);
               if (!entry) return null;
-              const isFirst = pi === 1;
-              const height = isFirst ? 140 : 100;
-              const rank = entry.rank;
-              const medals = ['🥇', '🥈', '🥉'];
-              const colors = ['var(--gold)', '#C0C0C0', '#CD7F32'];
-              const actualIdx = rank - 1;
+              const isFirst = cfg.rank === 1;
               return (
                 <motion.div key={entry.username}
-                  initial={{ y: 60, opacity: 0 }}
+                  initial={{ y: 40, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: actualIdx * 0.15, type: 'spring', stiffness: 150 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="text-4xl mb-2">{entry.avatar}</div>
-                  <div className="text-sm font-bold mb-1" style={{ color: 'var(--text-primary)' }}>{entry.username}</div>
-                  <div className="font-number text-xs font-bold mb-2" style={{ color: 'var(--emerald)', fontFamily: 'Orbitron, sans-serif' }}>
-                    {entry.totalWon.toLocaleString()}
-                  </div>
-                  <motion.div
-                    className="flex items-start justify-center rounded-t-xl relative"
-                    style={{
-                      width: isFirst ? 100 : 80,
-                      height,
-                      background: `linear-gradient(to top, ${colors[actualIdx]}20, ${colors[actualIdx]}40)`,
-                      border: `1px solid ${colors[actualIdx]}60`,
-                      borderBottom: 'none',
-                    }}
-                  >
-                    <span className="text-3xl mt-3">{medals[actualIdx]}</span>
-                  </motion.div>
-                </motion.div>
-              );
-            })}
-          </div>
-
-          {/* Table */}
-          <div className="glass-card overflow-hidden">
-            <div className="grid text-xs font-bold p-3 sticky top-0" style={{ background: 'rgba(0,0,0,0.5)', color: 'var(--text-muted)', gridTemplateColumns: '3rem 1fr 6rem 5rem 5rem' }}>
-              <span>Rank</span><span>Player</span><span>VIP</span><span className="text-right">Won</span><span className="text-right">Games</span>
-            </div>
-            {rest.map((entry, i) => {
-              const vipInfo = VIP_LEVELS[entry.vipLevel];
-              const isYou = entry.username === userProfile?.username;
-              return (
-                <motion.div key={entry.username}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.03 }}
-                  className="grid items-center p-3 text-sm"
+                  transition={{ delay: cfg.rank * 0.1, type: 'spring', stiffness: 180 }}
                   style={{
-                    gridTemplateColumns: '3rem 1fr 6rem 5rem 5rem',
-                    background: isYou ? 'rgba(255,215,0,0.06)' : i % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent',
-                    borderLeft: isYou ? '3px solid var(--gold)' : '3px solid transparent',
-                  }}
-                >
-                  <span className="font-number font-bold" style={{ color: 'var(--text-muted)', fontFamily: 'Orbitron, sans-serif', fontSize: 12 }}>
-                    #{entry.rank}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">{entry.avatar}</span>
-                    <span className="font-bold" style={{ color: isYou ? 'var(--gold)' : 'var(--text-primary)' }}>
-                      {entry.username} {isYou && <span className="text-xs">(you)</span>}
-                    </span>
+                    flex: isFirst ? '0 0 220px' : '0 0 180px',
+                    background: `linear-gradient(160deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 100%)`,
+                    border: `1px solid ${cfg.color}50`,
+                    borderRadius: 20,
+                    padding: isFirst ? '24px 16px 20px' : '18px 14px 16px',
+                    textAlign: 'center',
+                    boxShadow: `0 0 ${isFirst ? 50 : 25}px ${cfg.glow}`,
+                    position: 'relative',
+                    backdropFilter: 'blur(12px)',
+                  }}>
+                  {/* Medal badge */}
+                  <div style={{
+                    position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
+                    width: 28, height: 28, borderRadius: '50%',
+                    background: cfg.color, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, fontFamily: 'Orbitron,sans-serif', fontWeight: 900, color: '#000',
+                    boxShadow: `0 0 12px ${cfg.glow}`,
+                  }}>
+                    {cfg.rank}
                   </div>
-                  <span className="text-xs font-bold" style={{ color: vipInfo?.color }}>{vipInfo?.badge} {vipInfo?.label}</span>
-                  <span className="font-number text-right font-bold" style={{ color: 'var(--emerald)', fontFamily: 'Orbitron, sans-serif', fontSize: 11 }}>
+                  <div style={{ fontSize: isFirst ? 48 : 38, marginBottom: 8, lineHeight: 1 }}>{entry.avatar}</div>
+                  <div style={{ fontFamily: 'Syne,sans-serif', fontSize: isFirst ? 15 : 13, fontWeight: 700, color: '#fff', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {entry.username}
+                  </div>
+                  <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 10, color: VIP_LEVELS[entry.vipLevel]?.color, fontWeight: 700, marginBottom: 8 }}>
+                    {VIP_LEVELS[entry.vipLevel]?.badge} {VIP_LEVELS[entry.vipLevel]?.label}
+                  </div>
+                  <div style={{ fontFamily: 'Orbitron,sans-serif', fontSize: isFirst ? 16 : 13, fontWeight: 800, color: cfg.color }}>
                     {entry.totalWon.toLocaleString()}
-                  </span>
-                  <span className="font-number text-right" style={{ color: 'var(--text-muted)', fontFamily: 'Orbitron, sans-serif', fontSize: 11 }}>
-                    {entry.gamesPlayed}
-                  </span>
+                  </div>
+                  <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 10, color: 'rgba(255,255,255,.3)', marginTop: 2 }}>coins won</div>
+                  <div style={{ fontSize: isFirst ? 28 : 22, marginTop: 10 }}>{cfg.medal}</div>
                 </motion.div>
               );
             })}
-          </div>
-        </main>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Rank list */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rest.map((entry, i) => {
+            const vipInfo = VIP_LEVELS[entry.vipLevel];
+            const isYou = entry.username === userProfile?.username;
+            return (
+              <motion.div key={entry.username}
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.025 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 16px',
+                  borderRadius: 14,
+                  background: isYou ? 'rgba(255,215,0,.07)' : 'rgba(255,255,255,.03)',
+                  border: isYou ? '1px solid rgba(255,215,0,.3)' : '1px solid rgba(255,255,255,.05)',
+                }}>
+                {/* Rank */}
+                <div style={{ width: 36, fontFamily: 'Orbitron,sans-serif', fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,.35)', flexShrink: 0 }}>
+                  #{entry.rank}
+                </div>
+                {/* Avatar + name */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 24, flexShrink: 0 }}>{entry.avatar}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 14, fontWeight: 700, color: isYou ? '#FFD700' : '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {entry.username}{isYou && ' 👈'}
+                    </div>
+                    <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 11, color: vipInfo?.color, fontWeight: 600 }}>
+                      {vipInfo?.badge} {vipInfo?.label}
+                    </div>
+                  </div>
+                </div>
+                {/* Games */}
+                <div style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 11, color: 'rgba(255,255,255,.35)', flexShrink: 0, textAlign: 'right' }}>
+                  {entry.gamesPlayed}g
+                </div>
+                {/* Won */}
+                <div style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 13, fontWeight: 700, color: '#00C875', flexShrink: 0, minWidth: 80, textAlign: 'right' }}>
+                  {entry.totalWon.toLocaleString()}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+      </main>
       <MobileBottomNav />
     </div>
   );
