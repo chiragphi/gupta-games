@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Navbar from '@/components/layout/navbar';
-import { MobileBottomNav } from '@/components/layout/sidebar';
+import Sidebar, { MobileBottomNav } from '@/components/layout/sidebar';
 import GameCard from '@/components/lobby/game-card';
 import { generateFakeWin, VIP_LEVELS } from '@/data/fake-data';
 import { toast } from 'sonner';
@@ -133,7 +133,8 @@ export default function LobbyPage() {
   return (
     <div className="page-layout">
       <Navbar />
-        <main style={{ maxWidth: 900, margin: '0 auto', padding: '20px 16px 24px' }}>
+      <Sidebar />
+      <main style={{ maxWidth: 860, margin: '0 auto', padding: '20px 16px 24px' }}>
 
           {/* Balance hero card */}
           <motion.div
@@ -240,9 +241,9 @@ export default function LobbyPage() {
             style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 24 }}
           >
             {[
-              { label: 'Won', value: (userProfile?.totalWon ?? 0).toLocaleString(), color: '#00C875', icon: '📈' },
-              { label: 'Played', value: (userProfile?.gamesPlayed ?? 0).toString(), color: '#00E5FF', icon: '🎮' },
-              { label: 'VIP XP', value: Math.floor(userProfile?.vipXP ?? 0).toLocaleString(), color: vipInfo?.color ?? '#CD7F32', icon: '⭐' },
+              { label: 'Coins Won', value: (userProfile?.totalWon ?? 0).toLocaleString(), color: '#00C875' },
+              { label: 'Games', value: (userProfile?.gamesPlayed ?? 0).toString(), color: '#00E5FF' },
+              { label: 'VIP XP', value: Math.floor(userProfile?.vipXP ?? 0).toLocaleString(), color: vipInfo?.color ?? '#CD7F32' },
             ].map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -253,13 +254,12 @@ export default function LobbyPage() {
                   background: 'rgba(255,255,255,.04)',
                   border: '1px solid rgba(255,255,255,.08)',
                   borderRadius: 14,
-                  padding: '14px 12px',
+                  padding: '16px 12px 14px',
                   textAlign: 'center',
                 }}
               >
-                <div style={{ fontSize: 20, marginBottom: 4 }}>{stat.icon}</div>
-                <div style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 16, fontWeight: 800, color: stat.color }}>{stat.value}</div>
-                <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 10, color: 'rgba(255,255,255,.35)', marginTop: 2 }}>{stat.label}</div>
+                <div style={{ fontFamily: 'Orbitron,sans-serif', fontSize: 18, fontWeight: 800, color: stat.color, lineHeight: 1 }}>{stat.value}</div>
+                <div style={{ fontFamily: 'Syne,sans-serif', fontSize: 11, color: 'rgba(255,255,255,.4)', marginTop: 6 }}>{stat.label}</div>
               </motion.div>
             ))}
           </motion.div>
@@ -270,7 +270,7 @@ export default function LobbyPage() {
             <span style={{ fontFamily: 'Syne,sans-serif', fontSize: 11, fontWeight: 700, color: '#FF6B1A', background: 'rgba(255,107,26,.12)', borderRadius: 20, padding: '3px 10px' }}>4 LIVE</span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, marginBottom: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 14, marginBottom: 24 }}>
             {GAMES.map((game, i) => (
               <motion.div
                 key={game.id}
