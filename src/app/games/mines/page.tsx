@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import Navbar from '@/components/layout/navbar';
+import { MobileBottomNav } from '@/components/layout/sidebar';
 import WinModal from '@/components/shared/win-modal';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
@@ -19,7 +20,6 @@ interface Tile {
 }
 
 function calcMultiplier(revealed: number, mines: number): number {
-  // Fair multiplier calc based on probability
   let mult = 1.0;
   const total = 25;
   for (let i = 0; i < revealed; i++) {
@@ -27,7 +27,7 @@ function calcMultiplier(revealed: number, mines: number): number {
     const safeRemaining = remaining - mines;
     mult *= remaining / safeRemaining;
   }
-  return Math.round(mult * 97) / 100; // 97% RTP
+  return Math.round(mult * 97) / 100;
 }
 
 function generateMines(count: number): boolean[] {
@@ -80,7 +80,6 @@ export default function MinesPage() {
     if (tile.state !== 'hidden') return;
 
     if (tile.isMine) {
-      // Reveal all mines
       setTiles((prev) => prev.map((t) => t.isMine ? { ...t, state: 'mine' } : t));
       setGameOver(true);
       setActive(false);
@@ -98,7 +97,6 @@ export default function MinesPage() {
       setMultiplier(newMult);
       setCurrentWin(newWin);
 
-      // Auto win if all safe tiles revealed
       const totalSafe = 25 - mineCount;
       if (newRevealed >= totalSafe) {
         await cashOut(newWin, newMult);
@@ -124,141 +122,48 @@ export default function MinesPage() {
     } else {
       toast.success(`Cashed out ${finalAmount.toLocaleString()} coins at ${finalMult.toFixed(2)}x!`);
     }
-    // Reveal all mines
     setTiles((prev) => prev.map((t) => t.isMine ? { ...t, state: 'mine' } : t));
   }, [active, gameOver, cashedOut, currentWin, multiplier, updateBalance, updateProfile, userProfile, bet]);
 
+  if (!user) return null;
+
   return (
-    <div className="min-h-screen" style={{ background: 'var(--void)' }}>
+    <div className="page-layout">
       <Navbar />
-      <main className="max-w-2xl mx-auto p-4 md:p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/lobby"><motion.button whileHover={{ scale: 1.05 }} className="btn-glass p-2 rounded-lg"><ArrowLeft size={20} /></motion.button></Link>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>Diamond Mines</h1>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px' }}>
+        {/* Back + Title */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+          <Link href="/lobby">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px 10px', color: 'rgba(255,255,255,0.9)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <ArrowLeft size={20} />
+            </motion.button>
+          </Link>
+          <h1 style={{ fontFamily: 'Cinzel Decorative, serif', color: '#FFD700', fontSize: 24, fontWeight: 700, margin: 0 }}>
+            Diamond Mines
+          </h1>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-6">
-          {/* Controls */}
-          <div className="sm:w-48 space-y-4">
-            {/* Bet */}
-            <div className="glass-card p-4">
-              <label className="text-xs font-bold mb-2 block" style={{ color: 'var(--text-muted)' }}>BET AMOUNT</label>
-              <input
-                type="number"
-                value={bet}
-                onChange={(e) => !active && setBet(Math.max(100, Number(e.target.value)))}
-                disabled={active}
-                className="input-dark w-full px-3 py-2 rounded-lg text-sm font-number mb-2"
-                style={{ fontFamily: 'Orbitron, sans-serif' }}
-              />
-              <div className="grid grid-cols-2 gap-1">
-                {[500, 1000, 2500, 5000].map((v) => (
-                  <motion.button key={v} whileHover={{ scale: 1.05 }} onClick={() => !active && setBet(v)}
-                    disabled={active}
-                    className="py-1 rounded text-xs"
-                    style={{ background: bet === v ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.05)', color: bet === v ? 'var(--gold)' : 'var(--text-muted)', fontFamily: 'Orbitron, sans-serif', fontSize: 10 }}>
-                    {v >= 1000 ? `${v/1000}k` : v}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-
-            {/* Mines Count */}
-            <div className="glass-card p-4">
-              <label className="text-xs font-bold mb-2 block" style={{ color: 'var(--text-muted)' }}>MINES</label>
-              <div className="flex items-center gap-3">
-                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                  onClick={() => !active && setMineCount((m) => Math.max(1, m - 1))}
-                  disabled={active}
-                  className="w-8 h-8 rounded-lg font-bold flex items-center justify-center"
-                  style={{ background: 'rgba(255,215,0,0.1)', color: 'var(--gold)' }}>−</motion.button>
-                <span className="font-number text-xl font-bold flex-1 text-center" style={{ color: 'var(--magenta)', fontFamily: 'Orbitron, sans-serif' }}>
-                  {mineCount}💥
-                </span>
-                <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
-                  onClick={() => !active && setMineCount((m) => Math.min(24, m + 1))}
-                  disabled={active}
-                  className="w-8 h-8 rounded-lg font-bold flex items-center justify-center"
-                  style={{ background: 'rgba(255,215,0,0.1)', color: 'var(--gold)' }}>+</motion.button>
-              </div>
-              <div className="text-xs mt-2 text-center" style={{ color: 'var(--text-muted)' }}>
-                {25 - mineCount} safe tiles
-              </div>
-            </div>
-
-            {/* Multiplier / Win */}
-            {active || cashedOut || gameOver ? (
-              <div className="glass-card p-4 text-center">
-                <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>MULTIPLIER</div>
-                <motion.div
-                  key={multiplier}
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 0.3 }}
-                  className="font-number text-2xl font-black mb-2"
-                  style={{ color: 'var(--teal)', fontFamily: 'Orbitron, sans-serif' }}>
-                  {multiplier.toFixed(2)}x
-                </motion.div>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-muted)' }}>PROFIT</div>
-                <div className="font-number text-lg font-bold" style={{ color: currentWin > 0 ? 'var(--emerald)' : 'var(--text-muted)', fontFamily: 'Orbitron, sans-serif' }}>
-                  {currentWin > 0 ? `+${(currentWin - bet).toLocaleString()}` : '—'}
-                </div>
-              </div>
-            ) : null}
-
-            {/* Action button */}
-            {!active ? (
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={startGame}
-                className="btn-gold w-full py-3 rounded-xl font-black text-lg glow-pulse"
-                style={{ fontFamily: 'Cinzel Decorative, serif' }}>
-                {gameOver ? 'Play Again' : cashedOut ? 'Play Again' : 'Start Game'}
-              </motion.button>
-            ) : (
-              <motion.button
-                whileHover={{ scale: currentWin > 0 ? 1.05 : 1 }}
-                whileTap={{ scale: currentWin > 0 ? 0.95 : 1 }}
-                onClick={() => cashOut()}
-                disabled={currentWin === 0}
-                className="w-full py-3 rounded-xl font-black text-lg"
-                style={{
-                  background: currentWin > 0 ? 'linear-gradient(135deg, #00a050, #00C875)' : 'rgba(255,255,255,0.05)',
-                  color: '#fff',
-                  fontFamily: 'Cinzel Decorative, serif',
-                  boxShadow: currentWin > 0 ? '0 0 20px rgba(0,200,117,0.4)' : 'none',
-                  opacity: currentWin === 0 ? 0.5 : 1,
-                }}>
-                Cash Out<br />
-                <span className="text-sm font-normal font-number" style={{ fontFamily: 'Orbitron, sans-serif' }}>
-                  {currentWin > 0 ? `${currentWin.toLocaleString()} coins` : 'Reveal tiles first'}
-                </span>
-              </motion.button>
-            )}
-
-            {/* Balance */}
-            <div className="text-center text-xs" style={{ color: 'var(--text-muted)' }}>
-              Balance: <span className="font-number font-bold" style={{ color: 'var(--gold)', fontFamily: 'Orbitron, sans-serif' }}>
-                🪙 {(userProfile?.balance ?? 0).toLocaleString()}
-              </span>
-            </div>
-          </div>
-
-          {/* Grid */}
-          <div className="flex-1">
+        {/* Layout: grid left, controls right on desktop; stacked on mobile */}
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          {/* Mine Grid */}
+          <div style={{ flex: '1 1 320px' }}>
             <div
-              className="grid gap-2"
-              style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}
+              style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}
             >
               {tiles.length === 0 ? (
-                // Placeholder grid
                 Array.from({ length: 25 }).map((_, i) => (
                   <div
                     key={i}
-                    className="aspect-square rounded-xl flex items-center justify-center"
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                    style={{
+                      aspectRatio: '1', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                      fontSize: 22,
+                    }}
                   >
-                    <span className="text-2xl opacity-20">❔</span>
+                    <span style={{ opacity: 0.15 }}>❔</span>
                   </div>
                 ))
               ) : (
@@ -268,48 +173,36 @@ export default function MinesPage() {
                     whileHover={tile.state === 'hidden' && active ? { scale: 1.08, y: -2 } : {}}
                     whileTap={tile.state === 'hidden' && active ? { scale: 0.92 } : {}}
                     onClick={() => revealTile(tile.id)}
-                    className="aspect-square rounded-xl flex items-center justify-center text-2xl relative overflow-hidden"
                     style={{
+                      aspectRatio: '1', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+                      position: 'relative', overflow: 'hidden', border: 'none',
                       background:
                         tile.state === 'safe' ? 'linear-gradient(135deg, rgba(0,80,40,0.8), rgba(0,200,117,0.3))'
                         : tile.state === 'mine' ? 'linear-gradient(135deg, rgba(80,0,20,0.8), rgba(233,30,140,0.3))'
                         : 'rgba(255,255,255,0.06)',
-                      border:
-                        tile.state === 'safe' ? '1px solid rgba(0,200,117,0.5)'
-                        : tile.state === 'mine' ? '1px solid rgba(233,30,140,0.5)'
-                        : '1px solid rgba(255,255,255,0.08)',
+                      borderColor:
+                        tile.state === 'safe' ? 'rgba(0,200,117,0.5)'
+                        : tile.state === 'mine' ? 'rgba(233,30,140,0.5)'
+                        : 'rgba(255,255,255,0.08)',
+                      outline: `1px solid ${tile.state === 'safe' ? 'rgba(0,200,117,0.5)' : tile.state === 'mine' ? 'rgba(233,30,140,0.5)' : 'rgba(255,255,255,0.08)'}`,
                       cursor: tile.state === 'hidden' && active ? 'pointer' : 'default',
                       boxShadow: tile.state === 'safe' ? '0 0 12px rgba(0,200,117,0.3)' : tile.state === 'mine' ? '0 0 12px rgba(233,30,140,0.3)' : 'none',
                     }}
                   >
                     <AnimatePresence>
                       {tile.state === 'safe' && (
-                        <motion.div
-                          key="safe"
-                          initial={{ rotateY: 90, scale: 0 }}
-                          animate={{ rotateY: 0, scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                        >
+                        <motion.div key="safe" initial={{ rotateY: 90, scale: 0 }} animate={{ rotateY: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 300 }}>
                           💎
                         </motion.div>
                       )}
                       {tile.state === 'mine' && (
-                        <motion.div
-                          key="mine"
-                          initial={{ scale: 0 }}
-                          animate={{ scale: [0, 1.5, 1] }}
-                          transition={{ duration: 0.4 }}
-                        >
+                        <motion.div key="mine" initial={{ scale: 0 }} animate={{ scale: [0, 1.5, 1] }} transition={{ duration: 0.4 }}>
                           💥
                         </motion.div>
                       )}
                       {tile.state === 'hidden' && (
                         <motion.div key="hidden">
-                          {active ? (
-                            <span style={{ opacity: 0.15 }}>❔</span>
-                          ) : (
-                            <span style={{ opacity: 0.08 }}>❔</span>
-                          )}
+                          <span style={{ opacity: active ? 0.15 : 0.08 }}>❔</span>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -318,16 +211,16 @@ export default function MinesPage() {
               )}
             </div>
 
-            {/* Status */}
+            {/* Status Banner */}
             {(gameOver || cashedOut) && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-4 p-4 rounded-xl text-center font-bold text-lg"
                 style={{
+                  marginTop: 16, padding: '14px 20px', borderRadius: 14, textAlign: 'center', fontWeight: 700, fontSize: 16,
                   background: cashedOut ? 'rgba(0,200,117,0.1)' : 'rgba(233,30,140,0.1)',
-                  border: `1px solid ${cashedOut ? 'var(--emerald)' : 'var(--magenta)'}`,
-                  color: cashedOut ? 'var(--emerald)' : 'var(--magenta)',
+                  border: `1px solid ${cashedOut ? '#00C875' : '#E91E8C'}`,
+                  color: cashedOut ? '#00C875' : '#E91E8C',
                   fontFamily: 'Cinzel Decorative, serif',
                 }}
               >
@@ -337,8 +230,132 @@ export default function MinesPage() {
               </motion.div>
             )}
           </div>
+
+          {/* Right Controls Sidebar */}
+          <div style={{ width: 220, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Bet Amount */}
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: 16, padding: 18 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: 8, letterSpacing: 1 }}>BET AMOUNT</label>
+              <input
+                type="number"
+                value={bet}
+                onChange={(e) => !active && setBet(Math.max(100, Number(e.target.value)))}
+                disabled={active}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', fontFamily: 'Orbitron, sans-serif', fontSize: 13, marginBottom: 8, boxSizing: 'border-box' }}
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {[500, 1000, 2500, 5000].map((v) => (
+                  <motion.button
+                    key={v}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => !active && setBet(v)}
+                    disabled={active}
+                    style={{
+                      padding: '6px 0', borderRadius: 8, fontSize: 11, cursor: active ? 'not-allowed' : 'pointer',
+                      background: bet === v ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.05)',
+                      color: bet === v ? '#FFD700' : 'rgba(255,255,255,0.5)',
+                      border: `1px solid ${bet === v ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                      fontFamily: 'Orbitron, sans-serif',
+                    }}
+                  >
+                    {v >= 1000 ? `${v/1000}k` : v}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Mine Count */}
+            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: 16, padding: 18 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: 10, letterSpacing: 1 }}>MINES</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => !active && setMineCount((m) => Math.max(1, m - 1))}
+                  disabled={active}
+                  style={{ width: 36, height: 36, borderRadius: 10, fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,215,0,0.1)', color: '#FFD700', border: 'none', cursor: active ? 'not-allowed' : 'pointer' }}
+                >−</motion.button>
+                <span style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 20, fontWeight: 700, flex: 1, textAlign: 'center', color: '#E91E8C' }}>
+                  {mineCount} 💥
+                </span>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => !active && setMineCount((m) => Math.min(24, m + 1))}
+                  disabled={active}
+                  style={{ width: 36, height: 36, borderRadius: 10, fontWeight: 700, fontSize: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,215,0,0.1)', color: '#FFD700', border: 'none', cursor: active ? 'not-allowed' : 'pointer' }}
+                >+</motion.button>
+              </div>
+              <div style={{ fontSize: 11, marginTop: 6, textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
+                {25 - mineCount} safe tiles
+              </div>
+            </div>
+
+            {/* Multiplier / Win */}
+            {(active || cashedOut || gameOver) && (
+              <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(0,229,255,0.2)', borderRadius: 16, padding: 18, textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 6, letterSpacing: 1 }}>MULTIPLIER</div>
+                <motion.div
+                  key={multiplier}
+                  animate={{ scale: [1, 1.2, 1] }}
+                  transition={{ duration: 0.3 }}
+                  style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 28, fontWeight: 900, color: '#00E5FF', marginBottom: 8 }}
+                >
+                  {multiplier.toFixed(2)}x
+                </motion.div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 4, letterSpacing: 1 }}>PROFIT</div>
+                <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 16, fontWeight: 700, color: currentWin > 0 ? '#00C875' : 'rgba(255,255,255,0.3)' }}>
+                  {currentWin > 0 ? `+${(currentWin - bet).toLocaleString()}` : '—'}
+                </div>
+              </div>
+            )}
+
+            {/* Start / Cashout Button */}
+            {!active ? (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={startGame}
+                style={{
+                  width: '100%', padding: '16px 0', borderRadius: 14, fontFamily: 'Cinzel Decorative, serif', fontWeight: 900, fontSize: 17,
+                  background: 'linear-gradient(135deg, #FFD700, #FF9500)', color: '#1a1000', border: 'none', cursor: 'pointer',
+                  boxShadow: '0 0 20px rgba(255,215,0,0.3)',
+                }}
+              >
+                {gameOver || cashedOut ? 'Play Again' : 'Start Game'}
+              </motion.button>
+            ) : (
+              <motion.button
+                whileHover={{ scale: currentWin > 0 ? 1.05 : 1 }}
+                whileTap={{ scale: currentWin > 0 ? 0.95 : 1 }}
+                onClick={() => cashOut()}
+                disabled={currentWin === 0}
+                style={{
+                  width: '100%', padding: '16px 0', borderRadius: 14, fontFamily: 'Cinzel Decorative, serif', fontWeight: 900, fontSize: 16, border: 'none',
+                  background: currentWin > 0 ? 'linear-gradient(135deg, #00a050, #00C875)' : 'rgba(255,255,255,0.05)',
+                  color: '#fff', cursor: currentWin === 0 ? 'not-allowed' : 'pointer',
+                  boxShadow: currentWin > 0 ? '0 0 20px rgba(0,200,117,0.4)' : 'none',
+                  opacity: currentWin === 0 ? 0.5 : 1,
+                }}
+              >
+                Cash Out
+                <div style={{ fontSize: 12, fontFamily: 'Orbitron, sans-serif', fontWeight: 400, marginTop: 2 }}>
+                  {currentWin > 0 ? `${currentWin.toLocaleString()} coins` : 'Reveal tiles first'}
+                </div>
+              </motion.button>
+            )}
+
+            {/* Balance */}
+            <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
+              Balance: <span style={{ fontFamily: 'Orbitron, sans-serif', fontWeight: 700, color: '#FFD700' }}>
+                🪙 {(userProfile?.balance ?? 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
         </div>
       </main>
+
+      <MobileBottomNav />
 
       <WinModal
         open={winModal}

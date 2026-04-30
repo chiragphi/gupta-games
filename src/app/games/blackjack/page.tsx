@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import Navbar from '@/components/layout/navbar';
+import { MobileBottomNav } from '@/components/layout/sidebar';
 import WinModal from '@/components/shared/win-modal';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
@@ -50,26 +51,25 @@ function CardComponent({ card, index }: { card: Card; index: number }) {
       initial={{ rotateY: 90, opacity: 0, y: -30 }}
       animate={{ rotateY: 0, opacity: 1, y: 0 }}
       transition={{ delay: index * 0.15, type: 'spring', stiffness: 200 }}
-      className="relative rounded-xl flex items-center justify-center font-bold select-none"
       style={{
-        width: 72, height: 104,
+        position: 'relative', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, userSelect: 'none',
+        width: 72, height: 104, flexShrink: 0,
         background: card.hidden ? 'linear-gradient(135deg, #1a0a3e, #3d1078)' : '#F8F6F0',
         border: card.hidden ? '2px solid rgba(255,215,0,0.3)' : '2px solid rgba(0,0,0,0.1)',
         boxShadow: '0 4px 16px rgba(0,0,0,0.4)',
         color: isRed ? '#DC143C' : '#1a1a1a',
-        flexShrink: 0,
       }}
     >
       {card.hidden ? (
-        <div className="text-3xl opacity-60">🃏</div>
+        <div style={{ fontSize: 30, opacity: 0.6 }}>🃏</div>
       ) : (
-        <div className="flex flex-col items-start justify-between p-2 h-full w-full">
-          <div className="text-sm font-black leading-none">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'space-between', padding: 8, height: '100%', width: '100%', boxSizing: 'border-box' }}>
+          <div style={{ fontSize: 13, fontWeight: 900, lineHeight: 1 }}>
             <div>{card.rank}</div>
             <div>{card.suit}</div>
           </div>
-          <div className="text-2xl self-center leading-none">{card.suit}</div>
-          <div className="text-sm font-black leading-none self-end" style={{ transform: 'rotate(180deg)' }}>
+          <div style={{ fontSize: 22, alignSelf: 'center', lineHeight: 1 }}>{card.suit}</div>
+          <div style={{ fontSize: 13, fontWeight: 900, lineHeight: 1, alignSelf: 'flex-end', transform: 'rotate(180deg)' }}>
             <div>{card.rank}</div>
             <div>{card.suit}</div>
           </div>
@@ -124,7 +124,6 @@ export default function BlackjackPage() {
     setResult(null);
     setMessage('');
 
-    // Check for blackjack
     if (handValue(p) === 21) {
       setTimeout(() => settle(p, dealer, d.slice(4), 'blackjack'), 500);
     }
@@ -136,12 +135,10 @@ export default function BlackjackPage() {
     setPhase('dealer');
     setDealerThinking(true);
 
-    // Reveal dealer card
     const revealedDealer = dHand.map((c) => ({ ...c, hidden: false }));
     setDealerHand(revealedDealer);
 
     if (forcedResult !== 'blackjack') {
-      // Dealer hits to 17
       let dValue = handValue(revealedDealer);
       let currentDealer = [...revealedDealer];
       let currentDeck = [...remainingDeck];
@@ -212,7 +209,6 @@ export default function BlackjackPage() {
       setResult('lose');
       setMessage(`Bust! Lost ${bet.toLocaleString()} coins.`);
       setPhase('result');
-      // Reveal dealer
       setDealerHand((d) => d.map((c) => ({ ...c, hidden: false })));
       updateProfile({ gamesPlayed: (userProfile?.gamesPlayed ?? 0) + 1, totalWagered: (userProfile?.totalWagered ?? 0) + bet });
     } else if (val === 21) {
@@ -257,45 +253,62 @@ export default function BlackjackPage() {
   const dVal = handValue(dealerHand.map((c) => ({ ...c, hidden: false })));
 
   const resultColors: Record<string, string> = {
-    win: 'var(--emerald)', blackjack: 'var(--gold)', lose: 'var(--magenta)', push: 'var(--teal)'
+    win: '#00C875', blackjack: '#FFD700', lose: '#E91E8C', push: '#00E5FF'
   };
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--void)' }}>
+    <div className="page-layout">
       <Navbar />
-      <main className="max-w-3xl mx-auto p-4 md:p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/lobby"><motion.button whileHover={{ scale: 1.05 }} className="btn-glass p-2 rounded-lg"><ArrowLeft size={20} /></motion.button></Link>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>Royal Blackjack</h1>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px' }}>
+        {/* Back + Title + Balance */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, flexWrap: 'wrap' }}>
+          <Link href="/lobby">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px 10px', color: 'rgba(255,255,255,0.9)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <ArrowLeft size={20} />
+            </motion.button>
+          </Link>
+          <h1 style={{ fontFamily: 'Cinzel Decorative, serif', color: '#FFD700', fontSize: 24, fontWeight: 700, margin: 0, flex: 1 }}>
+            Royal Blackjack
+          </h1>
+          <div style={{ fontFamily: 'Orbitron, sans-serif', color: '#FFD700', fontWeight: 700 }}>
+            🪙 {(userProfile?.balance ?? 0).toLocaleString()}
+          </div>
+          {bet > 0 && (
+            <div style={{ fontFamily: 'Orbitron, sans-serif', color: 'rgba(255,255,255,0.7)', fontSize: 13 }}>
+              Bet: <span style={{ color: '#FFD700', fontWeight: 700 }}>{bet.toLocaleString()}</span>
+            </div>
+          )}
         </div>
 
+        {/* Felt Table */}
         <motion.div
-          className="glass-card p-6"
-          style={{ background: 'linear-gradient(135deg, #0a1500 0%, #1a3000 50%, #0d2800 100%)', border: '1px solid rgba(0,200,117,0.2)' }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            background: 'linear-gradient(135deg, #0a2a0a 0%, #0d3d0d 100%)',
+            border: '1px solid rgba(0,200,117,0.25)',
+            borderRadius: 20,
+            padding: 28,
+          }}
         >
-          {/* Balance */}
-          <div className="text-right mb-4">
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Balance: </span>
-            <span className="font-number font-bold" style={{ color: 'var(--gold)', fontFamily: 'Orbitron, sans-serif' }}>
-              🪙 {(userProfile?.balance ?? 0).toLocaleString()}
-            </span>
-          </div>
-
-          {/* Dealer Hand */}
-          <div className="mb-6">
-            <div className="text-sm mb-2 font-bold" style={{ color: 'var(--text-muted)' }}>
+          {/* Dealer Area */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: 'rgba(255,255,255,0.5)' }}>
               Dealer {dealerHand.length > 0 && phase !== 'playing' ? `(${dVal})` : ''}
             </div>
-            <div className="flex gap-2 flex-wrap min-h-[110px] items-center">
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', minHeight: 110, alignItems: 'center' }}>
               {dealerHand.length === 0 ? (
-                <div className="text-5xl opacity-20">🃏 🃏</div>
+                <div style={{ fontSize: 44, opacity: 0.15 }}>🃏 🃏</div>
               ) : (
                 dealerHand.map((c, i) => <CardComponent key={i} card={c} index={i} />)
               )}
               {dealerThinking && (
-                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="text-sm ml-2" style={{ color: 'var(--text-muted)' }}>
+                <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} style={{ fontSize: 13, marginLeft: 8, color: 'rgba(255,255,255,0.5)' }}>
                   thinking...
                 </motion.div>
               )}
@@ -309,11 +322,11 @@ export default function BlackjackPage() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-center text-xl font-bold py-3 mb-4 rounded-lg"
                 style={{
-                  color: result ? resultColors[result] : 'var(--gold)',
+                  textAlign: 'center', fontSize: 20, fontWeight: 700, padding: '12px 0', marginBottom: 16, borderRadius: 12,
+                  color: result ? resultColors[result] : '#FFD700',
                   background: result ? `${resultColors[result]}15` : 'rgba(255,215,0,0.08)',
-                  border: `1px solid ${result ? resultColors[result] : 'var(--gold)'}30`,
+                  border: `1px solid ${result ? resultColors[result] : '#FFD700'}30`,
                   fontFamily: 'Cinzel Decorative, serif',
                 }}
               >
@@ -322,40 +335,38 @@ export default function BlackjackPage() {
             )}
           </AnimatePresence>
 
-          {/* Player Hand */}
-          <div className="mb-6">
-            <div className="text-sm mb-2 font-bold" style={{ color: 'var(--text-muted)' }}>
+          {/* Player Area */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: 'rgba(255,255,255,0.5)' }}>
               You {playerHand.length > 0 ? `(${pVal})` : ''}
-              {pVal === 21 && playerHand.length === 2 && <span className="ml-2" style={{ color: 'var(--gold)' }}>♠ BLACKJACK!</span>}
-              {pVal > 21 && <span className="ml-2" style={{ color: 'var(--magenta)' }}>BUST!</span>}
+              {pVal === 21 && playerHand.length === 2 && <span style={{ marginLeft: 8, color: '#FFD700' }}>♠ BLACKJACK!</span>}
+              {pVal > 21 && <span style={{ marginLeft: 8, color: '#E91E8C' }}>BUST!</span>}
             </div>
-            <div className="flex gap-2 flex-wrap min-h-[110px] items-center">
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', minHeight: 110, alignItems: 'center' }}>
               {playerHand.length === 0 ? (
-                <div className="text-5xl opacity-20">🃏 🃏</div>
+                <div style={{ fontSize: 44, opacity: 0.15 }}>🃏 🃏</div>
               ) : (
                 playerHand.map((c, i) => <CardComponent key={i} card={c} index={i} />)
               )}
             </div>
           </div>
 
-          {/* Chips + Bet */}
+          {/* Chips Row */}
           {phase === 'betting' && (
-            <div className="mb-4">
-              <div className="text-xs font-bold mb-3" style={{ color: 'var(--text-muted)' }}>SELECT CHIPS</div>
-              <div className="flex gap-3 flex-wrap justify-center mb-4">
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', marginBottom: 12, letterSpacing: 1 }}>SELECT CHIPS</div>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 14 }}>
                 {CHIP_CONFIGS.map((chip) => (
                   <motion.button
                     key={chip.value}
                     whileHover={{ scale: 1.12, y: -4 }}
                     whileTap={{ scale: 0.92 }}
                     onClick={() => addBet(chip.value)}
-                    className="chip"
                     style={{
-                      background: chip.bg,
-                      borderColor: chip.border,
-                      color: '#fff',
-                      fontFamily: 'Orbitron, sans-serif',
-                      fontSize: 11,
+                      width: 56, height: 56, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: chip.bg, border: `3px solid ${chip.border}`, color: '#fff',
+                      fontFamily: 'Orbitron, sans-serif', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                      boxShadow: `0 4px 12px ${chip.border}40`,
                     }}
                   >
                     {chip.label}
@@ -363,55 +374,100 @@ export default function BlackjackPage() {
                 ))}
               </div>
               {bet > 0 && (
-                <div className="text-center mb-3">
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Bet: </span>
-                  <span className="font-number font-bold text-lg" style={{ color: 'var(--gold)', fontFamily: 'Orbitron, sans-serif' }}>{bet.toLocaleString()}</span>
-                  <motion.button onClick={() => setBet(0)} whileHover={{ scale: 1.05 }} className="ml-3 text-xs px-2 py-1 rounded" style={{ background: 'rgba(233,30,140,0.15)', color: 'var(--magenta)' }}>Clear</motion.button>
+                <div style={{ textAlign: 'center' }}>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Bet: </span>
+                  <span style={{ fontFamily: 'Orbitron, sans-serif', fontWeight: 700, fontSize: 18, color: '#FFD700' }}>{bet.toLocaleString()}</span>
+                  <motion.button
+                    onClick={() => setBet(0)}
+                    whileHover={{ scale: 1.05 }}
+                    style={{ marginLeft: 12, fontSize: 12, padding: '4px 10px', borderRadius: 8, background: 'rgba(233,30,140,0.15)', color: '#E91E8C', border: 'none', cursor: 'pointer' }}
+                  >
+                    Clear
+                  </motion.button>
                 </div>
               )}
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 justify-center flex-wrap">
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
             {phase === 'betting' && (
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={deal}
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={deal}
                 disabled={bet === 0}
-                className="btn-gold px-10 py-3 rounded-xl font-black text-lg"
-                style={{ fontFamily: 'Cinzel Decorative, serif', opacity: bet === 0 ? 0.5 : 1 }}>
+                style={{
+                  padding: '14px 48px', borderRadius: 14, fontFamily: 'Cinzel Decorative, serif', fontWeight: 900, fontSize: 18,
+                  background: bet === 0 ? 'rgba(255,215,0,0.3)' : 'linear-gradient(135deg, #FFD700, #FF9500)',
+                  color: '#1a1000', border: 'none', cursor: bet === 0 ? 'not-allowed' : 'pointer',
+                  opacity: bet === 0 ? 0.5 : 1, boxShadow: bet > 0 ? '0 4px 20px rgba(255,215,0,0.3)' : 'none',
+                }}
+              >
                 Deal
               </motion.button>
             )}
             {phase === 'playing' && (
               <>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={hit}
-                  className="btn-gold px-8 py-3 rounded-xl font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={hit}
+                  style={{
+                    padding: '14px 40px', borderRadius: 14, fontFamily: 'Syne, sans-serif', fontWeight: 900, fontSize: 18,
+                    background: 'linear-gradient(135deg, #FFD700, #FF9500)', color: '#1a1000', border: 'none', cursor: 'pointer',
+                    boxShadow: '0 4px 20px rgba(255,215,0,0.3)',
+                  }}
+                >
                   Hit
                 </motion.button>
-                <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={stand}
-                  className="btn-glass px-8 py-3 rounded-xl font-bold">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={stand}
+                  style={{
+                    padding: '14px 40px', borderRadius: 14, fontFamily: 'Syne, sans-serif', fontWeight: 900, fontSize: 18,
+                    background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.9)', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+                  }}
+                >
                   Stand
                 </motion.button>
                 {playerHand.length === 2 && (
-                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={doubleDown}
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={doubleDown}
                     disabled={(userProfile?.balance ?? 0) < bet}
-                    className="px-6 py-3 rounded-xl font-bold text-sm"
-                    style={{ background: 'rgba(0,229,255,0.15)', border: '1px solid var(--teal)', color: 'var(--teal)' }}>
+                    style={{
+                      padding: '14px 32px', borderRadius: 14, fontFamily: 'Syne, sans-serif', fontWeight: 700, fontSize: 16,
+                      background: 'rgba(0,229,255,0.15)', border: '1px solid #00E5FF', color: '#00E5FF', cursor: 'pointer',
+                      opacity: (userProfile?.balance ?? 0) < bet ? 0.5 : 1,
+                    }}
+                  >
                     Double
                   </motion.button>
                 )}
               </>
             )}
             {phase === 'result' && (
-              <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={reset}
-                className="btn-gold px-10 py-3 rounded-xl font-black text-lg glow-pulse"
-                style={{ fontFamily: 'Cinzel Decorative, serif' }}>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={reset}
+                style={{
+                  padding: '14px 56px', borderRadius: 14, fontFamily: 'Cinzel Decorative, serif', fontWeight: 900, fontSize: 18,
+                  background: 'linear-gradient(135deg, #FFD700, #FF9500)', color: '#1a1000', border: 'none', cursor: 'pointer',
+                  boxShadow: '0 0 30px rgba(255,215,0,0.4)',
+                }}
+              >
                 New Round
               </motion.button>
             )}
           </div>
         </motion.div>
       </main>
+
+      <MobileBottomNav />
 
       <WinModal open={winModal} amount={winAmount} onClose={() => setWinModal(false)} onPlayAgain={() => { setWinModal(false); reset(); }} />
     </div>

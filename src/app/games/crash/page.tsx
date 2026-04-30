@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/auth-context';
 import Navbar from '@/components/layout/navbar';
+import { MobileBottomNav } from '@/components/layout/sidebar';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -36,7 +37,6 @@ const FAKE_PLAYERS_BASE = [
 ];
 
 function generateCrashPoint(): number {
-  // House edge: crashes tend lower
   const r = Math.random();
   if (r < 0.4) return +(1 + Math.random() * 0.8).toFixed(2);
   if (r < 0.7) return +(1.8 + Math.random() * 2).toFixed(2);
@@ -58,14 +58,14 @@ export default function CrashPage() {
   const [cashedOut, setCashedOut] = useState(false);
   const [cashedMultiplier, setCashedMultiplier] = useState(0);
   const [history, setHistory] = useState<HistoryItem[]>([
-    { value: 2.14, color: 'var(--emerald)' },
-    { value: 1.02, color: 'var(--magenta)' },
-    { value: 5.87, color: 'var(--emerald)' },
-    { value: 1.45, color: 'var(--emerald)' },
-    { value: 1.01, color: 'var(--magenta)' },
-    { value: 23.4, color: 'var(--teal)' },
-    { value: 1.78, color: 'var(--emerald)' },
-    { value: 1.12, color: 'var(--magenta)' },
+    { value: 2.14, color: '#00C875' },
+    { value: 1.02, color: '#E91E8C' },
+    { value: 5.87, color: '#00C875' },
+    { value: 1.45, color: '#00C875' },
+    { value: 1.01, color: '#E91E8C' },
+    { value: 23.4, color: '#00E5FF' },
+    { value: 1.78, color: '#00C875' },
+    { value: 1.12, color: '#E91E8C' },
   ]);
   const [players, setPlayers] = useState<Player[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -88,7 +88,6 @@ export default function CrashPage() {
     setCashedMultiplier(0);
     setState('flying');
 
-    // Generate fake players
     const fakePlayers = FAKE_PLAYERS_BASE.slice(0, 5 + Math.floor(Math.random() * 3)).map((p) => ({
       ...p,
       bet: Math.floor(100 + Math.random() * 2000),
@@ -102,13 +101,11 @@ export default function CrashPage() {
       current = +(current + increase).toFixed(2);
       setMultiplier(current);
 
-      // Auto cashout
       const ac = parseFloat(autoCashoutRef.current);
       if (!isNaN(ac) && current >= ac && !cashedRef.current && hasBetRef.current) {
         cashOut(current);
       }
 
-      // Fake players cash out
       setPlayers((prev) => prev.map((p) => {
         if (p.status === 'playing' && Math.random() < 0.02 && current > 1.3) {
           return { ...p, status: 'cashed', cashedOut: current };
@@ -122,7 +119,7 @@ export default function CrashPage() {
         setState('crashed');
         setPlayers((prev) => prev.map((p) => p.status === 'playing' ? { ...p, status: 'lost' } : p));
         setHistory((h) => [
-          { value: crashRef.current, color: crashRef.current < 2 ? 'var(--magenta)' : crashRef.current < 10 ? 'var(--emerald)' : 'var(--teal)' },
+          { value: crashRef.current, color: crashRef.current < 2 ? '#E91E8C' : crashRef.current < 10 ? '#00C875' : '#00E5FF' },
           ...h.slice(0, 9),
         ]);
         if (hasBetRef.current && !cashedRef.current) {
@@ -174,225 +171,233 @@ export default function CrashPage() {
     toast.info(`Bet placed: ${bet.toLocaleString()} coins`);
   };
 
-  const multColor = multiplier >= 10 ? 'var(--teal)' : multiplier >= 3 ? 'var(--emerald)' : multiplier >= 2 ? 'var(--gold)' : 'var(--text-primary)';
+  const multColor = multiplier >= 10 ? '#00E5FF' : multiplier >= 3 ? '#00C875' : multiplier >= 2 ? '#FFD700' : 'rgba(255,255,255,0.9)';
 
   if (!user) return null;
 
   return (
-    <div className="min-h-screen" style={{ background: 'var(--void)' }}>
+    <div className="page-layout">
       <Navbar />
-      <main className="max-w-5xl mx-auto p-4 md:p-6">
-        <div className="flex items-center gap-4 mb-6">
-          <Link href="/lobby"><motion.button whileHover={{ scale: 1.05 }} className="btn-glass p-2 rounded-lg"><ArrowLeft size={20} /></motion.button></Link>
-          <h1 className="text-2xl font-bold" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>Crash Rocket</h1>
-        </div>
-
-        {/* History */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
-          {history.map((h, i) => (
-            <span key={i} className="px-2 py-1 rounded text-xs font-bold flex-shrink-0"
-              style={{ background: 'rgba(255,255,255,0.06)', color: h.color, fontFamily: 'Orbitron, sans-serif', border: `1px solid ${h.color}40` }}>
-              {h.value}x
-            </span>
-          ))}
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Game Canvas */}
-          <div className="flex-1">
-            <motion.div
-              className="glass-card relative overflow-hidden"
-              style={{ height: 320, background: 'linear-gradient(135deg, #0a1a0a 0%, #0d2a1a 100%)', border: '1px solid rgba(0,200,117,0.3)' }}
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px' }}>
+        {/* Back + Title + History */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
+          <Link href="/lobby">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px 10px', color: 'rgba(255,255,255,0.9)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
             >
-              {/* Grid lines */}
-              {[1,2,3,4].map((i) => (
-                <div key={i} className="absolute left-0 right-0" style={{ bottom: `${i * 20}%`, borderTop: '1px solid rgba(255,255,255,0.04)' }} />
-              ))}
-              {[1,2,3,4].map((i) => (
-                <div key={i} className="absolute top-0 bottom-0" style={{ left: `${i * 20}%`, borderLeft: '1px solid rgba(255,255,255,0.04)' }} />
-              ))}
+              <ArrowLeft size={20} />
+            </motion.button>
+          </Link>
+          <h1 style={{ fontFamily: 'Cinzel Decorative, serif', color: '#FFD700', fontSize: 24, fontWeight: 700, margin: 0 }}>
+            Crash Rocket
+          </h1>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, flex: 1 }}>
+            {history.map((h, i) => (
+              <span
+                key={i}
+                style={{ padding: '4px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700, flexShrink: 0, background: 'rgba(255,255,255,0.06)', color: h.color, fontFamily: 'Orbitron, sans-serif', border: `1px solid ${h.color}40` }}
+              >
+                {h.value}x
+              </span>
+            ))}
+          </div>
+        </div>
 
-              {state === 'crashed' && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="absolute inset-0"
-                  style={{ background: 'rgba(233,30,140,0.1)' }}
-                />
-              )}
+        {/* Main Game Canvas */}
+        <motion.div
+          style={{ position: 'relative', overflow: 'hidden', borderRadius: 20, height: 380, background: 'linear-gradient(135deg, #050f05 0%, #0a1f0a 50%, #061406 100%)', border: '1px solid rgba(0,200,117,0.35)', marginBottom: 20 }}
+        >
+          {/* Grid lines */}
+          {[1,2,3,4].map((i) => (
+            <div key={i} style={{ position: 'absolute', left: 0, right: 0, bottom: `${i * 20}%`, borderTop: '1px solid rgba(255,255,255,0.04)' }} />
+          ))}
+          {[1,2,3,4].map((i) => (
+            <div key={i} style={{ position: 'absolute', top: 0, bottom: 0, left: `${i * 20}%`, borderLeft: '1px solid rgba(255,255,255,0.04)' }} />
+          ))}
 
-              {/* Rocket path (CSS curve) */}
-              {state === 'flying' && (
-                <motion.div
-                  className="absolute"
-                  style={{
-                    bottom: `${Math.min((multiplier - 1) * 8, 70)}%`,
-                    left: `${Math.min((multiplier - 1) * 12, 75)}%`,
-                    fontSize: 36,
-                    filter: 'drop-shadow(0 0 12px rgba(255,107,26,0.8))',
-                  }}
-                  animate={{ rotate: [-10, 5, -10] }}
-                  transition={{ repeat: Infinity, duration: 0.5 }}
-                >
-                  🚀
-                </motion.div>
-              )}
+          {state === 'crashed' && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ position: 'absolute', inset: 0, background: 'rgba(233,30,140,0.08)' }} />
+          )}
 
-              {/* Multiplier Display */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-center">
-                  <AnimatePresence mode="wait">
-                    {state === 'waiting' ? (
-                      <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <div className="text-6xl mb-2">⏳</div>
-                        <div className="font-number text-2xl" style={{ color: 'var(--gold)', fontFamily: 'Orbitron, sans-serif' }}>
-                          Starting in {countdown}s
+          {state === 'flying' && (
+            <motion.div
+              style={{
+                position: 'absolute',
+                bottom: `${Math.min((multiplier - 1) * 8, 70)}%`,
+                left: `${Math.min((multiplier - 1) * 12, 75)}%`,
+                fontSize: 40,
+                filter: 'drop-shadow(0 0 14px rgba(255,107,26,0.9))',
+              }}
+              animate={{ rotate: [-10, 5, -10] }}
+              transition={{ repeat: Infinity, duration: 0.5 }}
+            >
+              🚀
+            </motion.div>
+          )}
+
+          {/* Multiplier Display */}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ textAlign: 'center' }}>
+              <AnimatePresence mode="wait">
+                {state === 'waiting' ? (
+                  <motion.div key="wait" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <div style={{ fontSize: 56, marginBottom: 8 }}>⏳</div>
+                    <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 22, color: '#FFD700' }}>
+                      Starting in {countdown}s
+                    </div>
+                  </motion.div>
+                ) : state === 'crashed' ? (
+                  <motion.div key="crashed" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}>
+                    <div style={{ fontSize: 48, marginBottom: 8 }}>💥</div>
+                    <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 36, fontWeight: 900, color: '#E91E8C' }}>
+                      CRASHED @ {crashPoint}x
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="flying" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    {cashedOut ? (
+                      <div>
+                        <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 44, fontWeight: 900, color: '#00C875', textShadow: '0 0 30px rgba(0,200,117,0.8)' }}>
+                          CASHED OUT
                         </div>
-                      </motion.div>
-                    ) : state === 'crashed' ? (
-                      <motion.div key="crashed" initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }}>
-                        <div className="text-5xl mb-2">💥</div>
-                        <div className="font-number text-4xl font-black" style={{ color: 'var(--magenta)', fontFamily: 'Orbitron, sans-serif' }}>
-                          CRASHED @ {crashPoint}x
+                        <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 28, marginTop: 4, color: '#FFD700' }}>
+                          @ {cashedMultiplier.toFixed(2)}x
                         </div>
-                      </motion.div>
+                      </div>
                     ) : (
-                      <motion.div key="flying" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                        {cashedOut ? (
-                          <div>
-                            <div className="font-number text-5xl font-black" style={{ color: 'var(--emerald)', fontFamily: 'Orbitron, sans-serif', textShadow: '0 0 30px rgba(0,200,117,0.8)' }}>
-                              CASHED OUT
-                            </div>
-                            <div className="font-number text-3xl mt-1" style={{ color: 'var(--gold)', fontFamily: 'Orbitron, sans-serif' }}>
-                              @ {cashedMultiplier.toFixed(2)}x
-                            </div>
-                          </div>
-                        ) : (
-                          <motion.div
-                            animate={{ scale: [1, 1.02, 1] }}
-                            transition={{ repeat: Infinity, duration: 0.5 }}
-                            className="font-number text-7xl font-black"
-                            style={{ color: multColor, fontFamily: 'Orbitron, sans-serif', textShadow: `0 0 40px ${multColor}80` }}
-                          >
-                            {multiplier.toFixed(2)}x
-                          </motion.div>
-                        )}
+                      <motion.div
+                        animate={{ scale: [1, 1.02, 1] }}
+                        transition={{ repeat: Infinity, duration: 0.5 }}
+                        style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 72, fontWeight: 900, color: multColor, textShadow: `0 0 40px ${multColor}80` }}
+                      >
+                        {multiplier.toFixed(2)}x
                       </motion.div>
                     )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Bet Controls */}
-            <div className="glass-card p-4 mt-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <label className="text-xs font-bold mb-2 block" style={{ color: 'var(--text-muted)' }}>BET AMOUNT</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={bet}
-                      onChange={(e) => setBet(Math.max(100, Number(e.target.value)))}
-                      disabled={state !== 'waiting' || hasBet}
-                      className="input-dark flex-1 px-3 py-2 rounded-lg text-sm font-number"
-                      style={{ fontFamily: 'Orbitron, sans-serif' }}
-                    />
-                    {[500, 1000, 2500].map((v) => (
-                      <motion.button key={v} whileHover={{ scale: 1.05 }} onClick={() => setBet(v)}
-                        disabled={state !== 'waiting' || hasBet}
-                        className="px-2 py-1 rounded text-xs" style={{ background: 'rgba(255,215,0,0.1)', color: 'var(--gold)', fontFamily: 'Orbitron, sans-serif' }}>
-                        {v >= 1000 ? `${v/1000}k` : v}
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-                <div className="w-40">
-                  <label className="text-xs font-bold mb-2 block" style={{ color: 'var(--text-muted)' }}>AUTO CASHOUT</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 2.00"
-                    step="0.1"
-                    value={autoCashout}
-                    onChange={(e) => setAutoCashout(e.target.value)}
-                    className="input-dark w-full px-3 py-2 rounded-lg text-sm font-number"
-                    style={{ fontFamily: 'Orbitron, sans-serif' }}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-3 mt-4">
-                {!hasBet ? (
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    onClick={placeBet}
-                    disabled={state !== 'waiting'}
-                    className="btn-gold flex-1 py-3 rounded-xl font-black text-lg"
-                    style={{ fontFamily: 'Cinzel Decorative, serif', opacity: state !== 'waiting' ? 0.5 : 1 }}
-                  >
-                    {state === 'waiting' ? `Bet ${bet.toLocaleString()} Coins` : 'Round in progress...'}
-                  </motion.button>
-                ) : (
-                  <motion.button
-                    whileHover={{ scale: state === 'flying' && !cashedOut ? 1.05 : 1 }}
-                    whileTap={{ scale: state === 'flying' && !cashedOut ? 0.95 : 1 }}
-                    onClick={() => cashOut()}
-                    disabled={state !== 'flying' || cashedOut}
-                    className="flex-1 py-3 rounded-xl font-black text-xl relative overflow-hidden"
-                    style={{
-                      background: cashedOut ? 'rgba(0,200,117,0.3)' : 'linear-gradient(135deg, #00a050, #00C875)',
-                      color: '#fff',
-                      opacity: state !== 'flying' || cashedOut ? 0.6 : 1,
-                      fontFamily: 'Cinzel Decorative, serif',
-                      boxShadow: state === 'flying' && !cashedOut ? '0 0 30px rgba(0,200,117,0.5)' : 'none',
-                    }}
-                  >
-                    {cashedOut ? `Cashed @ ${cashedMultiplier.toFixed(2)}x ✓` : `CASH OUT @ ${multiplier.toFixed(2)}x`}
-                  </motion.button>
+                  </motion.div>
                 )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Bet Controls Card */}
+        <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: 16, padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 16 }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: 8, letterSpacing: 1 }}>BET AMOUNT</label>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  type="number"
+                  value={bet}
+                  onChange={(e) => setBet(Math.max(100, Number(e.target.value)))}
+                  disabled={state !== 'waiting' || hasBet}
+                  style={{ flex: 1, padding: '10px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', fontFamily: 'Orbitron, sans-serif', fontSize: 14 }}
+                />
+                {[500, 1000, 2500].map((v) => (
+                  <motion.button
+                    key={v}
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => setBet(v)}
+                    disabled={state !== 'waiting' || hasBet}
+                    style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(255,215,0,0.1)', color: '#FFD700', fontFamily: 'Orbitron, sans-serif', fontSize: 12, border: '1px solid rgba(255,215,0,0.25)', cursor: 'pointer' }}
+                  >
+                    {v >= 1000 ? `${v/1000}k` : v}
+                  </motion.button>
+                ))}
               </div>
-              {hasBet && state === 'flying' && !cashedOut && (
-                <div className="text-center text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
-                  Current profit: <span className="font-bold" style={{ color: 'var(--emerald)' }}>+{Math.floor(bet * multiplier - bet).toLocaleString()}</span> coins
-                </div>
-              )}
+            </div>
+            <div style={{ width: 160 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.3)', display: 'block', marginBottom: 8, letterSpacing: 1 }}>AUTO CASHOUT</label>
+              <input
+                type="number"
+                placeholder="e.g. 2.00"
+                step="0.1"
+                value={autoCashout}
+                onChange={(e) => setAutoCashout(e.target.value)}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', fontFamily: 'Orbitron, sans-serif', fontSize: 14, boxSizing: 'border-box' }}
+              />
             </div>
           </div>
 
-          {/* Players Panel */}
-          <div className="lg:w-52 glass-card p-4">
-            <div className="text-sm font-bold mb-4" style={{ color: 'var(--gold)', fontFamily: 'Cinzel Decorative, serif' }}>
+          {!hasBet ? (
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={placeBet}
+              disabled={state !== 'waiting'}
+              style={{
+                width: '100%', padding: '16px 0', borderRadius: 14, fontFamily: 'Cinzel Decorative, serif', fontWeight: 900, fontSize: 18,
+                background: state !== 'waiting' ? 'rgba(255,215,0,0.3)' : 'linear-gradient(135deg, #FFD700, #FF9500)',
+                color: '#1a1000', border: 'none', cursor: state !== 'waiting' ? 'not-allowed' : 'pointer',
+                opacity: state !== 'waiting' ? 0.5 : 1,
+              }}
+            >
+              {state === 'waiting' ? `Bet ${bet.toLocaleString()} Coins` : 'Round in progress...'}
+            </motion.button>
+          ) : (
+            <motion.button
+              whileHover={{ scale: state === 'flying' && !cashedOut ? 1.05 : 1 }}
+              whileTap={{ scale: state === 'flying' && !cashedOut ? 0.95 : 1 }}
+              onClick={() => cashOut()}
+              disabled={state !== 'flying' || cashedOut}
+              style={{
+                width: '100%', padding: '16px 0', borderRadius: 14, fontFamily: 'Cinzel Decorative, serif', fontWeight: 900, fontSize: 20, border: 'none',
+                background: cashedOut ? 'rgba(0,200,117,0.3)' : 'linear-gradient(135deg, #00a050, #00C875)',
+                color: '#fff', cursor: state !== 'flying' || cashedOut ? 'not-allowed' : 'pointer',
+                opacity: state !== 'flying' || cashedOut ? 0.6 : 1,
+                boxShadow: state === 'flying' && !cashedOut ? '0 0 30px rgba(0,200,117,0.5)' : 'none',
+              }}
+            >
+              {cashedOut ? `Cashed @ ${cashedMultiplier.toFixed(2)}x ✓` : `CASH OUT @ ${multiplier.toFixed(2)}x`}
+            </motion.button>
+          )}
+
+          {hasBet && state === 'flying' && !cashedOut && (
+            <div style={{ textAlign: 'center', fontSize: 13, marginTop: 10, color: 'rgba(255,255,255,0.5)' }}>
+              Current profit: <span style={{ fontWeight: 700, color: '#00C875' }}>+{Math.floor(bet * multiplier - bet).toLocaleString()}</span> coins
+            </div>
+          )}
+        </div>
+
+        {/* Players Panel — horizontal scroll row */}
+        {players.length > 0 && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#FFD700', fontFamily: 'Cinzel Decorative, serif', marginBottom: 10 }}>
               Players ({players.length})
             </div>
-            <div className="space-y-2">
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8 }}>
               {players.map((p, i) => (
-                <div key={i} className="flex items-center gap-2 p-2 rounded-lg text-xs" style={{ background: 'rgba(255,255,255,0.03)' }}>
-                  <span className="text-lg">{p.avatar}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold truncate" style={{ color: 'var(--text-primary)' }}>{p.username}</div>
-                    <div style={{ color: 'var(--text-muted)' }}>{p.bet.toLocaleString()}</div>
-                  </div>
-                  <div className="font-number text-right" style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 10 }}>
-                    {p.status === 'cashed' ? (
-                      <span style={{ color: 'var(--emerald)' }}>{p.cashedOut?.toFixed(2)}x ✓</span>
-                    ) : p.status === 'lost' ? (
-                      <span style={{ color: 'var(--magenta)' }}>💥</span>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)' }}>playing</span>
-                    )}
+                <div
+                  key={i}
+                  style={{
+                    flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 12,
+                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
+                    minWidth: 140,
+                  }}
+                >
+                  <span style={{ fontSize: 22 }}>{p.avatar}</span>
+                  <div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>{p.username}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{p.bet.toLocaleString()}</div>
+                    <div style={{ fontSize: 11, fontFamily: 'Orbitron, sans-serif' }}>
+                      {p.status === 'cashed' ? (
+                        <span style={{ color: '#00C875' }}>{p.cashedOut?.toFixed(2)}x ✓</span>
+                      ) : p.status === 'lost' ? (
+                        <span style={{ color: '#E91E8C' }}>💥 lost</span>
+                      ) : (
+                        <span style={{ color: 'rgba(255,255,255,0.3)' }}>playing</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Your Balance</div>
-              <div className="font-number font-bold" style={{ color: 'var(--gold)', fontFamily: 'Orbitron, sans-serif' }}>
-                🪙 {(userProfile?.balance ?? 0).toLocaleString()}
-              </div>
-            </div>
           </div>
-        </div>
+        )}
       </main>
+
+      <MobileBottomNav />
     </div>
   );
 }

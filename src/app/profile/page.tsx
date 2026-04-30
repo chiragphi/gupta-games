@@ -5,10 +5,10 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Navbar from '@/components/layout/navbar';
-import Sidebar from '@/components/layout/sidebar';
+import { MobileBottomNav } from '@/components/layout/sidebar';
 import { VIP_LEVELS, AVATARS } from '@/data/fake-data';
 import { toast } from 'sonner';
-import { Edit2, Trophy, Zap, Target, Clock } from 'lucide-react';
+import { Edit2 } from 'lucide-react';
 
 const ACHIEVEMENTS = [
   { id: 'first_spin', emoji: '🎰', label: 'First Spin', desc: 'Play your first slot', xp: 100 },
@@ -62,162 +62,224 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'var(--void)' }}>
+    <div className="page-layout">
       <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
-          <motion.h1 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-            className="text-2xl font-bold mb-6" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>
-            Profile
-          </motion.h1>
+      <main style={{ maxWidth: 1100, margin: '0 auto', padding: '24px 20px' }}>
+        <motion.h1
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ fontFamily: 'Cinzel Decorative, serif', color: '#FFD700', fontSize: 26, fontWeight: 700, marginBottom: 24, margin: '0 0 24px 0' }}
+        >
+          Profile
+        </motion.h1>
 
-          <div className="flex flex-col lg:flex-row gap-6">
-            {/* Profile Card */}
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-              className="glass-card p-6 lg:w-72"
-              style={{ border: `1px solid ${vipInfo?.color}40` }}>
+        {/* Profile Hero Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          style={{
+            background: 'rgba(255,255,255,0.05)', border: `1px solid ${vipInfo?.color ?? '#FFD700'}40`,
+            borderRadius: 20, padding: 28, marginBottom: 20,
+            display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap',
+          }}
+        >
+          {/* Avatar */}
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            style={{ fontSize: 72, lineHeight: 1, filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.4))' }}
+          >
+            {userProfile?.avatar ?? '🦁'}
+          </motion.div>
 
-              {/* Avatar */}
-              <div className="text-center mb-4">
-                <motion.div whileHover={{ scale: 1.1 }} className="text-7xl mb-3 inline-block" style={{ filter: 'drop-shadow(0 0 20px rgba(255,215,0,0.4))' }}>
-                  {userProfile?.avatar ?? '🦁'}
-                </motion.div>
-                <h2 className="text-xl font-bold" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--text-primary)' }}>
-                  {userProfile?.username ?? 'Player'}
-                </h2>
-                <div className="text-sm mt-1 font-bold" style={{ color: vipInfo?.color }}>
-                  {vipInfo?.badge} {vipInfo?.label}
-                </div>
-                <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                  Member since {userProfile?.joinDate ? new Date(userProfile.joinDate).toLocaleDateString() : '—'}
-                </div>
-              </div>
+          {/* Info */}
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <h2 style={{ fontFamily: 'Cinzel Decorative, serif', color: 'rgba(255,255,255,0.9)', fontSize: 22, fontWeight: 700, margin: '0 0 6px 0' }}>
+              {userProfile?.username ?? 'Player'}
+            </h2>
+            <div style={{ fontSize: 14, fontWeight: 700, color: vipInfo?.color, marginBottom: 4 }}>
+              {vipInfo?.badge} {vipInfo?.label}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
+              Member since {userProfile?.joinDate ? new Date(userProfile.joinDate).toLocaleDateString() : '—'}
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setEditing(!editing)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              <Edit2 size={14} /> Edit Profile
+            </motion.button>
+          </div>
 
-              {/* VIP Bar */}
-              <div className="mb-4">
-                <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-                  <span>{vipInfo?.label}</span>
-                  <span>{VIP_LEVELS[Math.min((userProfile?.vipLevel ?? 0) + 1, 5)]?.label ?? 'MAX'}</span>
-                </div>
-                <div className="w-full rounded-full h-2" style={{ background: 'rgba(255,255,255,0.1)' }}>
-                  <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(xpProgress, 100)}%` }}
-                    transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
-                    className="h-2 rounded-full" style={{ background: `linear-gradient(90deg, ${vipInfo?.color}, var(--gold))` }} />
-                </div>
-                <div className="text-xs mt-1 text-right" style={{ color: 'var(--text-muted)' }}>
-                  {Math.floor(userProfile?.vipXP ?? 0).toLocaleString()} / {vipInfo?.maxXP.toLocaleString()} XP
-                </div>
-              </div>
-
-              {/* VIP Benefits */}
-              <div className="mb-4">
-                <div className="text-xs font-bold mb-2" style={{ color: 'var(--gold)' }}>VIP BENEFITS</div>
-                {vipInfo?.benefits.map((b, i) => (
-                  <div key={i} className="text-xs py-1 flex items-center gap-2" style={{ color: 'var(--text-secondary)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span>✓</span><span>{b}</span>
-                  </div>
-                ))}
-              </div>
-
-              <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                onClick={() => setEditing(!editing)}
-                className="btn-glass w-full py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
-                <Edit2 size={14} /> Edit Profile
-              </motion.button>
-            </motion.div>
-
-            <div className="flex-1 space-y-6">
-              {/* Edit Form */}
-              {editing && (
-                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5" style={{ border: '1px solid var(--teal)' }}>
-                  <h3 className="font-bold mb-4" style={{ color: 'var(--teal)', fontFamily: 'Cinzel Decorative, serif' }}>Edit Profile</h3>
-                  <div className="mb-4">
-                    <label className="text-xs mb-1 block" style={{ color: 'var(--text-muted)' }}>USERNAME</label>
-                    <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)}
-                      className="input-dark w-full px-3 py-2 rounded-lg text-sm" maxLength={20} />
-                  </div>
-                  <div className="mb-4">
-                    <label className="text-xs mb-2 block" style={{ color: 'var(--text-muted)' }}>AVATAR</label>
-                    <div className="flex flex-wrap gap-2">
-                      {AVATARS.map((av) => (
-                        <motion.button key={av} whileHover={{ scale: 1.2 }} onClick={() => setNewAvatar(av)}
-                          className="text-3xl p-2 rounded-lg"
-                          style={{ background: newAvatar === av ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.04)', border: `2px solid ${newAvatar === av ? 'var(--gold)' : 'transparent'}` }}>
-                          {av}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <motion.button whileHover={{ scale: 1.03 }} onClick={saveEdit} disabled={saving}
-                      className="btn-gold px-6 py-2 rounded-lg text-sm font-bold" style={{ fontFamily: 'Syne, sans-serif' }}>
-                      {saving ? 'Saving...' : 'Save'}
-                    </motion.button>
-                    <motion.button whileHover={{ scale: 1.03 }} onClick={() => setEditing(false)}
-                      className="btn-glass px-6 py-2 rounded-lg text-sm">Cancel</motion.button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {[
-                  { label: 'Games Played', value: (userProfile?.gamesPlayed ?? 0).toLocaleString(), icon: '🎮', color: 'var(--teal)' },
-                  { label: 'Total Wagered', value: (userProfile?.totalWagered ?? 0).toLocaleString(), icon: '🪙', color: 'var(--gold)' },
-                  { label: 'Biggest Win', value: (userProfile?.biggestWin ?? 0).toLocaleString(), icon: '🏆', color: 'var(--emerald)' },
-                  { label: 'Login Streak', value: `${userProfile?.streak ?? 1} days`, icon: '🔥', color: 'var(--saffron)' },
-                ].map((stat, i) => (
-                  <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
-                    className="glass-card p-4 text-center">
-                    <div className="text-2xl mb-1">{stat.icon}</div>
-                    <div className="font-number font-bold" style={{ color: stat.color, fontFamily: 'Orbitron, sans-serif', fontSize: 14 }}>{stat.value}</div>
-                    <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{stat.label}</div>
-                  </motion.div>
-                ))}
-              </div>
-
-              {/* Achievements */}
-              <div className="glass-card p-5">
-                <div className="font-bold mb-4" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--gold)' }}>
-                  Achievements ({unlockedAchievements.size}/{ACHIEVEMENTS.length})
-                </div>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                  {ACHIEVEMENTS.map((ach, i) => {
-                    const unlocked = unlockedAchievements.has(ach.id);
-                    return (
-                      <motion.div key={ach.id} initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.04 }}
-                        className="flex flex-col items-center gap-1 cursor-default group relative"
-                        title={`${ach.label}: ${ach.desc} (+${ach.xp} XP)`}>
-                        <div className={`achievement-badge ${unlocked ? 'unlocked' : 'locked'}`}
-                          style={{ background: unlocked ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.04)', border: `2px solid ${unlocked ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}` }}>
-                          {ach.emoji}
-                        </div>
-                        <div className="text-center text-xs" style={{ color: unlocked ? 'var(--gold)' : 'var(--text-muted)', fontSize: 10 }}>
-                          {ach.label}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Referral Code */}
-              <div className="glass-card p-5" style={{ border: '1px solid rgba(233,30,140,0.3)' }}>
-                <div className="font-bold mb-2" style={{ fontFamily: 'Cinzel Decorative, serif', color: 'var(--magenta)' }}>Your Referral Code</div>
-                <div className="flex items-center gap-3">
-                  <div className="font-number text-xl font-black px-4 py-2 rounded-lg" style={{ background: 'rgba(233,30,140,0.1)', color: 'var(--magenta)', fontFamily: 'Orbitron, sans-serif', letterSpacing: 3 }}>
-                    {userProfile?.referralCode ?? 'GUPTA000'}
-                  </div>
-                  <motion.button whileHover={{ scale: 1.05 }} onClick={() => { navigator.clipboard.writeText(userProfile?.referralCode ?? ''); toast.success('Copied!'); }}
-                    className="btn-glass px-4 py-2 rounded-lg text-sm">Copy</motion.button>
-                </div>
-                <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>Share your code and earn 1,000 coins per referral!</p>
-              </div>
+          {/* Balance */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: 1, marginBottom: 4 }}>BALANCE</div>
+            <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 22, fontWeight: 900, color: '#FFD700' }}>
+              🪙 {(userProfile?.balance ?? 0).toLocaleString()}
             </div>
           </div>
-        </main>
-      </div>
+        </motion.div>
+
+        {/* Edit Form */}
+        {editing && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid #00E5FF', borderRadius: 16, padding: 24, marginBottom: 20 }}
+          >
+            <h3 style={{ fontFamily: 'Cinzel Decorative, serif', color: '#00E5FF', fontWeight: 700, fontSize: 16, margin: '0 0 16px 0' }}>Edit Profile</h3>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 6, letterSpacing: 1 }}>USERNAME</label>
+              <input
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                maxLength={20}
+                style={{ width: '100%', padding: '10px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', fontSize: 14, boxSizing: 'border-box' }}
+              />
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 8, letterSpacing: 1 }}>AVATAR</label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {AVATARS.map((av) => (
+                  <motion.button
+                    key={av}
+                    whileHover={{ scale: 1.2 }}
+                    onClick={() => setNewAvatar(av)}
+                    style={{ fontSize: 28, padding: 8, borderRadius: 10, cursor: 'pointer', background: newAvatar === av ? 'rgba(255,215,0,0.2)' : 'rgba(255,255,255,0.04)', border: `2px solid ${newAvatar === av ? '#FFD700' : 'transparent'}` }}
+                  >
+                    {av}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                onClick={saveEdit}
+                disabled={saving}
+                style={{ padding: '10px 24px', borderRadius: 10, background: 'linear-gradient(135deg, #FFD700, #FF9500)', color: '#1a1000', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                onClick={() => setEditing(false)}
+                style={{ padding: '10px 24px', borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}
+              >
+                Cancel
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Stats Row: 2×2 on mobile, 4-col on desktop */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 20 }}>
+          {[
+            { label: 'Games Played', value: (userProfile?.gamesPlayed ?? 0).toLocaleString(), icon: '🎮', color: '#00E5FF' },
+            { label: 'Total Wagered', value: (userProfile?.totalWagered ?? 0).toLocaleString(), icon: '🪙', color: '#FFD700' },
+            { label: 'Biggest Win', value: (userProfile?.biggestWin ?? 0).toLocaleString(), icon: '🏆', color: '#00C875' },
+            { label: 'Login Streak', value: `${userProfile?.streak ?? 1} days`, icon: '🔥', color: '#FF9500' },
+          ].map((stat, i) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07 }}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: 16, padding: 20, textAlign: 'center' }}
+            >
+              <div style={{ fontSize: 28, marginBottom: 6 }}>{stat.icon}</div>
+              <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 16, fontWeight: 700, color: stat.color, marginBottom: 4 }}>{stat.value}</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{stat.label}</div>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* VIP Progress Bar Card */}
+        <div style={{ background: 'rgba(255,255,255,0.05)', border: `1px solid ${vipInfo?.color ?? '#FFD700'}30`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
+          <div style={{ fontFamily: 'Cinzel Decorative, serif', color: '#FFD700', fontWeight: 700, fontSize: 15, marginBottom: 14 }}>
+            VIP Progress
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 8, color: 'rgba(255,255,255,0.5)' }}>
+            <span>{vipInfo?.label}</span>
+            <span>{VIP_LEVELS[Math.min((userProfile?.vipLevel ?? 0) + 1, 5)]?.label ?? 'MAX'}</span>
+          </div>
+          <div style={{ width: '100%', borderRadius: 99, height: 10, background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginBottom: 8 }}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${Math.min(xpProgress, 100)}%` }}
+              transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+              style={{ height: '100%', borderRadius: 99, background: `linear-gradient(90deg, ${vipInfo?.color ?? '#FFD700'}, #FFD700)` }}
+            />
+          </div>
+          <div style={{ fontSize: 12, textAlign: 'right', color: 'rgba(255,255,255,0.4)' }}>
+            {Math.floor(userProfile?.vipXP ?? 0).toLocaleString()} / {vipInfo?.maxXP.toLocaleString()} XP
+          </div>
+          <div style={{ marginTop: 14, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {vipInfo?.benefits.map((b: string, i: number) => (
+              <span key={i} style={{ fontSize: 12, padding: '4px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ color: '#00C875' }}>✓</span> {b}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Achievements Grid */}
+        <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,215,0,0.15)', borderRadius: 16, padding: 24, marginBottom: 20 }}>
+          <div style={{ fontFamily: 'Cinzel Decorative, serif', color: '#FFD700', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
+            Achievements ({unlockedAchievements.size}/{ACHIEVEMENTS.length})
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 12 }}>
+            {ACHIEVEMENTS.map((ach, i) => {
+              const unlocked = unlockedAchievements.has(ach.id);
+              return (
+                <motion.div
+                  key={ach.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.04 }}
+                  title={`${ach.label}: ${ach.desc} (+${ach.xp} XP)`}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'default' }}
+                >
+                  <div style={{
+                    width: 56, height: 56, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26,
+                    background: unlocked ? 'rgba(255,215,0,0.1)' : 'rgba(255,255,255,0.04)',
+                    border: `2px solid ${unlocked ? 'rgba(255,215,0,0.4)' : 'rgba(255,255,255,0.08)'}`,
+                    filter: unlocked ? 'none' : 'grayscale(1) opacity(0.4)',
+                  }}>
+                    {ach.emoji}
+                  </div>
+                  <div style={{ textAlign: 'center', fontSize: 10, color: unlocked ? '#FFD700' : 'rgba(255,255,255,0.4)', lineHeight: 1.2 }}>
+                    {ach.label}
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Referral Code Card */}
+        <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(233,30,140,0.3)', borderRadius: 16, padding: 24 }}>
+          <div style={{ fontFamily: 'Cinzel Decorative, serif', color: '#E91E8C', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
+            Your Referral Code
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+            <div style={{ fontFamily: 'Orbitron, sans-serif', fontSize: 20, fontWeight: 900, padding: '10px 20px', borderRadius: 12, background: 'rgba(233,30,140,0.1)', color: '#E91E8C', letterSpacing: 4 }}>
+              {userProfile?.referralCode ?? 'GUPTA000'}
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              onClick={() => { navigator.clipboard.writeText(userProfile?.referralCode ?? ''); toast.success('Copied!'); }}
+              style={{ padding: '10px 20px', borderRadius: 10, background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Copy
+            </motion.button>
+          </div>
+          <p style={{ fontSize: 12, marginTop: 10, color: 'rgba(255,255,255,0.4)' }}>Share your code and earn 1,000 coins per referral!</p>
+        </div>
+      </main>
+
+      <MobileBottomNav />
     </div>
   );
 }
